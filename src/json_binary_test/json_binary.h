@@ -230,7 +230,6 @@ public:
                     else
                         write_bytes = content_left;
                     ofs.write(current, write_bytes);
-                    ofs.seekp(0, std::ios_base::cur);
                     std::streampos written_bytes = ofs.tellp();
                     std::cout << "WrittenBytes = " << written_bytes << std::endl;
                     current += written_bytes;
