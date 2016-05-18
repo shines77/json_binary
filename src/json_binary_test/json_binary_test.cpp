@@ -80,11 +80,11 @@ public:
     }
 
     bool ReadFromFile(const std::string & filename, bool add_quote = false) {
-        return json_binary<display_screen_on>::encodeFromFile(filename, file_content_, content_size_, add_quote);
+        return json_binary<double_escape>::encodeFromFile(filename, file_content_, content_size_, add_quote);
     }
 
     bool SaveContentToFile(const std::string & filename) {
-        return json_binary<display_screen_on>::saveToFile(filename, file_content_, content_size_);
+        return json_binary<double_escape>::saveToFile(filename, file_content_, content_size_);
     }
 };
 
@@ -110,23 +110,23 @@ void test_simple_dom()
 {
     // 1. Parse a JSON string into DOM.
     const char* json = "{\"project\": \"rapidjson\",\"stars\": 10, \"binary\": \"\"}";
-    Document d;
-    d.Parse(json);
+    Document doc;
+    doc.Parse(json);
 
     // 2. Modify it by DOM.
-    Value& s = d["stars"];
+    Value& s = doc["stars"];
     s.SetInt(s.GetInt() + 1);
 
-    Value& bin = d["binary"];
+    Value& bin = doc["binary"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary<display_screen_off>::encodeFromFile("C:\\test_json_binary.bin", content, content_size, false);
+    json_binary<single_escape>::encodeFromFile("C:\\test_json_binary.bin", content, content_size, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
 
     // 3. Stringify the DOM
     StringBuffer buffer;
     PrettyWriter<StringBuffer> writer(buffer);
-    d.Accept(writer);
+    doc.Accept(writer);
 
     // Output {"project":"rapidjson","stars":11}
     std::cout << std::endl;

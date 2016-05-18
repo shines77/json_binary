@@ -6,29 +6,44 @@
 #include <iostream>
 #include <fstream>
 
-#define Z16     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-static const char escape_table[256] = {
-        // 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-          '0',  0,   0,   0,   0,   0,   0,   0,  'b', 't', 'n',   0, 'f', 'r',  0,   0,    // 00~0F
-           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    // 10~1F
-           0,   0,  '"',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '/',   // 20~2F
-         Z16,                                                                               // 30~3F
-         Z16,                                                                               // 40~4F
-           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '\\', 0,   0,   0,    // 50~5F
+static const char hex_u_table[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'A', 'B', 'C', 'D', 'E', 'F'
+};
 
-         Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16                                   // 60~FF
+static const char hex_l_table[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'a', 'b', 'c', 'd', 'e', 'f'
+};
+
+#define Z16 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+static const char escape_table[256] = {
+    // 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+      '0',  0,   0,   0,   0,   0,   0,   0,  'b', 't', 'n',   0, 'f', 'r',  0,   0,    // 00~0F
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    // 10~1F
+       0,   0,  '"',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '/',   // 20~2F
+     Z16,                                                                               // 30~3F
+     Z16,                                                                               // 40~4F
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '\\', 0,   0,   0,    // 50~5F
+
+     Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16                                   // 60~FF
 };
 #undef Z16
 
-enum display_screen_t {
-    display_screen_off = false,
-    display_screen_on = true
+struct binary_hex
+{
+    binary_hex() = default;
+    ~binary_hex() = default;
 };
 
-template <bool display_on_screen = display_screen_off>
-class json_binary
+enum double_escape_t {
+    single_escape = false,
+    double_escape = true
+};
+
+template <bool DoubleEscape = single_escape>
+struct json_binary
 {
-public:
     json_binary() = default;
     ~json_binary() = default;
 
@@ -52,7 +67,7 @@ public:
                 src++;
             }
             else {
-                if (display_on_screen) {
+                if (DoubleEscape) {
                     // '\\', '\"', '\/'
                     if (ch > 32)
                         *dest++ = '\\';
@@ -92,7 +107,7 @@ public:
                 src++;
             }
             else {
-                if (display_on_screen) {
+                if (DoubleEscape) {
                     // '\\', '\"', '\/'
                     if (ch > 32)
                         *dest++ = '\\';
@@ -134,7 +149,7 @@ public:
                 src++;
             }
             else {
-                if (display_on_screen) {
+                if (DoubleEscape) {
                     // '\\', '\"', '\/'
                     if (ch > 32)
                         *dest++ = '\\';
@@ -248,7 +263,7 @@ public:
         return bSuccess;
     }
 
-    static bool encodeFromFile(const std::string & filename, std::string & str,
+    static bool encodeFromFile(const std::string & filename, std::string & content,
         std::size_t & encode_size, bool add_quote = false) {
         bool bSuccess = false;
         std::ifstream ifs;
@@ -261,25 +276,25 @@ public:
                 std::streampos spos_end = ifs.tellg();
                 std::streamsize file_size = spos_end;
                 file_size += 1;
-                if ((std::streamsize)str.capacity() < file_size)
-                    str.reserve(file_size);
-                if ((std::streamsize)str.capacity() < file_size) {
+                if ((std::streamsize)content.capacity() < file_size)
+                    content.reserve(file_size);
+                if ((std::streamsize)content.capacity() < file_size) {
                     return (file_size == 0);
                 }
                 static const std::streamsize kReadSize = 65536;
-                std::string json_str;
+                std::string json_bin;
                 std::size_t json_size;
-                if (display_on_screen)
+                if (DoubleEscape)
                     json_size = file_size * 4 + 1;
                 else
                     json_size = file_size * 2 + 1;
                 if (add_quote)
                     json_size += 3;
-                json_str.reserve(json_size);
-                char * current = &str[0];
-                char * content_end = current + str.capacity();
-                char * json_start = &json_str[0];
-                char * json_end = json_start + json_str.capacity();
+                json_bin.reserve(json_size);
+                char * current = &content[0];
+                char * content_end = current + content.capacity();
+                char * json_start = &json_bin[0];
+                char * json_end = json_start + json_bin.capacity();
                 char * json = json_start;
                 std::size_t encode_total = 0;
                 if (add_quote)
@@ -303,7 +318,7 @@ public:
                     *json = '\0';
                 }
                 encode_size = json - json_start;
-                str.swap(json_str);
+                content.swap(json_bin);
                 ifs.close();
                 bSuccess = true;
             }
