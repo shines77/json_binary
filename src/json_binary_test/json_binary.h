@@ -111,16 +111,29 @@ static const char hex_lookup_256[256] = {
 #undef  F16
 
 #define Z16 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-static const char escape_table[256] = {
+static const char escape_table_256[256] = {
     // 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
       '0',  0,   0,   0,   0,   0,   0,   0,  'b', 't', 'n',   0, 'f', 'r',  0,   0,    // 00~0F
        0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    // 10~1F
-       0,   0,  '"',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '/',   // 20~2F
+       0,   0, '\"',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '/',   // 20~2F
      Z16,                                                                               // 30~3F
      Z16,                                                                               // 40~4F
        0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '\\', 0,   0,   0,    // 50~5F
      Z16,                                                                               // 60~6F
      Z16,                                                                               // 70~7F
+     Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16                                             // 80~FF
+};
+
+static const char unescape_table_256[256] = {
+    // 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+     Z16,                                                                               // 00~0F
+     Z16,                                                                               // 10~1F
+       0,   0, '\"',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '/',   // 20~2F
+     '\0',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    // 30~3F
+     Z16,                                                                               // 40~4F
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  '\\', 0,   0,   0,    // 50~5F
+       0,   0, '\b',  0,   0,   0, '\f',  0,   0,   0,   0,   0,   0,   0, '\n',  0,    // 60~6F
+       0,   0, '\r',  0, '\t',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    // 70~7F
      Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16                                             // 80~FF
 };
 #undef Z16
@@ -579,11 +592,11 @@ namespace json_binary_hex
 };
 
 enum double_escape_t {
-    single_escape = false,
-    double_escape = true
+    once_escape = false,
+    twice_escape = true
 };
 
-template <bool isDoubleEscape = single_escape>
+template <bool isDoubleEscape = once_escape>
 struct json_binary
 {
     json_binary() = default;
@@ -602,7 +615,7 @@ struct json_binary
         // dest can not overflow dest_max forever.
         while (src < src_end) {
             char c = *src;
-            char escape = escape_table[c];
+            char escape = escape_table_256[c];
             if (escape == 0) {
                 *dest++ = c;
                 assert(dest <= dest_max);
@@ -639,7 +652,7 @@ struct json_binary
         // The json buffer size can less than the data length.
         while (src < src_end) {
             char c = *src;
-            char escape = escape_table[c];
+            char escape = escape_table_256[c];
             if (escape == 0) {
                 *dest++ = c;
                 if (dest >= dest_max) {
@@ -679,16 +692,130 @@ struct json_binary
 
     static std::size_t encode(const char * src, std::size_t src_len,
         std::string & dest, bool fill_null = true) {
-        return json_binary::encode(src, src_len, dest, std::string::max_size(), fill_null);
+        char * dest_ptr = &dest[0];
+        return json_binary::encode(src, src_len, dest_ptr, std::string::max_size(), fill_null);
     }
 
-    static std::size_t encode(const std::string & src,
-        std::string & dest, bool fill_null = true) {
+    static std::size_t encode(const std::string & src, std::string & dest, bool fill_null = true) {
         return json_binary::encode(src, src.length(), dest, std::string::max_size(), fill_null);
     }
 
-    static bool decode(std::string & content, const std::string & filename) {
-        return true;
+    static std::size_t decode(const char * json, std::size_t json_len,
+        char * dest, std::size_t max_size, bool fill_null = true) {
+        char * src = const_cast<char *>(json);
+        char * src_end = src + data_len;
+        char * dest_start = dest;
+        char * dest_max = dest + max_size;
+        if (fill_null)
+            dest_max -= 1;
+        // The dest json decode buffer size must be less than src json length.
+        assert(max_size <= json_len);
+        // dest can not overflow dest_max forever.
+        while (src < src_end) {
+            char c = *src;
+            if (c != '\\') {
+                *dest++ = c;
+                src++;
+            }
+            else {
+                // if (c == '\\')
+                src++;
+                char e = *src;
+                char unescape = unescape_table_256[e];
+                if (unescape != 0) {
+                    // It's a valid unescape char.
+                    *dest++ = unescape;
+                    src++;
+                }
+                else {
+                    // Error: Parse string escape invalid.
+                }
+            }
+        }
+        assert(dest != nullptr);
+        if (fill_null)
+            *dest = '\0';
+        assert(dest >= dest_start);
+        return (dest - dest_start);
+    }
+
+    static std::size_t decode_twice_escape(const char * json, std::size_t json_len,
+        char * dest, std::size_t max_size, bool fill_null = true, bool skip_quote = false) {
+        char * src = const_cast<char *>(json);
+        char * src_end = src + data_len;
+        char * dest_start = dest;
+        char * dest_max = dest + max_size;
+        if (fill_null)
+            dest_max -= 1;
+        // The dest json decode buffer size must be less than src json length.
+        assert(max_size <= json_len);
+        // dest can not overflow dest_max forever.
+        if (skip_quote && (*src == '\"'))
+            src++;
+        while (src < src_end) {
+            char c = *src;
+            char e, unescape;
+            if (c != '\\') {
+                *dest++ = c;
+                src++;
+            }
+            else if (skip_quote && (c == '\"')) {
+                src++;
+                break;
+            }
+            else {
+                src++;
+                c = *src;
+                if (c == '\\') {
+                    src++;
+                    e = *src;
+                    if (e != '\\') {
+                        // "\\x" -> "\x", "\n", "\r"
+                        unescape = unescape_table_256[e];
+                        if (unescape != 0) {
+                            // It's a valid unescape char.
+                            *dest++ = unescape;
+                        }
+                        else {
+                            // Error: Parse string escape invalid.
+                        }
+                        src++;
+                    }
+                    else {
+                        // "\\\x" -> "\/", "\"", "\\"
+                        src++;
+                        e = *src;
+                        unescape = unescape_table_256[e];
+                        if (unescape != 0) {
+                            // It's a valid unescape char.
+                            *dest++ = unescape;
+                        }
+                        else {
+                            // Error: Parse string escape invalid.
+                        }
+                        src++;
+                    }
+                }
+                else {
+                    // Error: Parse string escape invalid. --> "\x"
+                }
+            }
+        }
+        assert(dest != nullptr);
+        if (fill_null)
+            *dest = '\0';
+        assert(dest >= dest_start);
+        return (dest - dest_start);
+    }
+
+    static std::size_t decode(const char * src, std::size_t src_len, const std::string & dest, bool fill_null = true) {
+        char * dest_buf = &dest[0];
+        return decode(src, src_len, dest_buf, std::string::max_size(), fill_null);
+    }
+
+    static std::size_t decode(std::string & src, const std::string & dest, bool fill_null = true) {
+        char * dest_buf = &dest[0];
+        return decode(content.c_str(), content.length(), dest, std::string::max_size(), fill_null);
     }
 
     static bool encodeFromFile(const std::string & filename, std::string & content, bool add_quote = false) {

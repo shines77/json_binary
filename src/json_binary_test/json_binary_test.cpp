@@ -85,7 +85,7 @@ public:
     }
 
     bool EncodeFromFile(const std::string & filename, bool add_quote = false) {
-        return json_binary<double_escape>::encodeFromFile(filename, file_content_, add_quote);
+        return json_binary<twice_escape>::encodeFromFile(filename, file_content_, add_quote);
     }
 
     bool EncodeHexFromFile(const std::string & filename, bool add_quote = false) {
@@ -124,7 +124,7 @@ void test_simple_dom()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary<single_escape>::encodeFromFile(TEST_BIN_FILENAME, content, false);
+    json_binary<once_escape>::encodeFromFile(TEST_BIN_FILENAME, content, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
 
     // 3. Stringify the DOM
@@ -238,14 +238,14 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary<single_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary<once_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
-            std::cout << "json_binary<single_escape>::encodeFromFile():" << std::endl;
+            std::cout << "json_binary<once_escape>::encodeFromFile():" << std::endl;
             std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
-            std::cout << "json_binary<single_escape>::encodeFromFile(): failure." << std::endl;
+            std::cout << "json_binary<once_escape>::encodeFromFile(): failure." << std::endl;
         }
         std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
         std::cout << std::endl;
@@ -260,14 +260,14 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary<double_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary<twice_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
-            std::cout << "json_binary<double_escape>::encodeFromFile():" << std::endl;
+            std::cout << "json_binary<twice_escape>::encodeFromFile():" << std::endl;
             std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
-            std::cout << "json_binary<double_escape>::encodeFromFile(): failure." << std::endl;
+            std::cout << "json_binary<twice_escape>::encodeFromFile(): failure." << std::endl;
         }
         std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
         std::cout << std::endl;
