@@ -51,7 +51,7 @@ struct json_binary_utils
     json_binary_utils() = default;
     ~json_binary_utils() = default;
 
-    static bool readFromFile(const std::string & filename, std::string & content, std::size_t & content_size) {
+    static bool readFromFile(const std::string & filename, std::string & content) {
         bool bSuccess = false;
         std::ifstream ifs;
         try {
@@ -82,7 +82,7 @@ struct json_binary_utils
                     current += read_bytes;
                     read_total += read_bytes;
                 }
-                content_size = read_total;
+                content.resize(read_total);
                 ifs.close();
                 bSuccess = true;
             }
@@ -333,8 +333,7 @@ struct json_binary_hex
         return (dest - buffer);
     }
 
-    static bool encodeFromFile(const std::string & filename, std::string & content,
-        std::size_t & encode_size, bool add_quote = false) {
+    static bool encodeFromFile(const std::string & filename, std::string & content, bool add_quote = false) {
         bool bSuccess = false;
         std::ifstream ifs;
         try {
@@ -381,7 +380,9 @@ struct json_binary_hex
                     *json++ = '\"';
                     *json = '\0';
                 }
-                encode_size = json - json_start;
+                std::size_t encode_size = json - json_start;
+                if (json >= json_start)
+                    json_bin.resize(encode_size);
                 json_bin.resize(encode_size);
                 content.swap(json_bin);
                 ifs.close();
@@ -546,8 +547,7 @@ struct json_binary
         return true;
     }
 
-    static bool encodeFromFile(const std::string & filename, std::string & content,
-        std::size_t & encode_size, bool add_quote = false) {
+    static bool encodeFromFile(const std::string & filename, std::string & content, bool add_quote = false) {
         bool bSuccess = false;
         std::ifstream ifs;
         try {
@@ -597,8 +597,9 @@ struct json_binary
                     *json++ = '\"';
                     *json = '\0';
                 }
-                encode_size = json - json_start;
-                json_bin.resize(encode_size);
+                std::size_t encode_size = json - json_start;
+                if (json >= json_start)
+                    json_bin.resize(encode_size);
                 content.swap(json_bin);
                 ifs.close();
                 bSuccess = true;

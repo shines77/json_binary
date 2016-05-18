@@ -84,15 +84,15 @@ public:
     }
 
     bool EncodeFromFile(const std::string & filename, bool add_quote = false) {
-        return json_binary<double_escape>::encodeFromFile(filename, file_content_, content_size_, add_quote);
+        return json_binary<double_escape>::encodeFromFile(filename, file_content_, add_quote);
     }
 
     bool EncodeHexFromFile(const std::string & filename, bool add_quote = false) {
-        return json_binary_hex::encodeFromFile(filename, file_content_, content_size_, add_quote);
+        return json_binary_hex::encodeFromFile(filename, file_content_, add_quote);
     }
 
     bool SaveContentToFile(const std::string & filename) {
-        return json_binary_utils::saveToFile(filename, file_content_, content_size_);
+        return json_binary_utils::saveToFile(filename, file_content_, file_content_.length());
     }
 };
 
@@ -110,7 +110,7 @@ void test_simple_dom()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary<single_escape>::encodeFromFile(TEST_BIN_FILENAME, content, content_size, false);
+    json_binary<single_escape>::encodeFromFile(TEST_BIN_FILENAME, content, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
 
     // 3. Stringify the DOM
@@ -156,8 +156,8 @@ void test_simple_dom_hex()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary_hex::encodeFromFile(TEST_BIN_FILENAME, content, content_size, false);
-    bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
+    json_binary_hex::encodeFromFile(TEST_BIN_FILENAME, content, false);
+    bin.SetString(content.c_str(), (rapidjson::SizeType)content.length());  
 
     // 3. Stringify the DOM
     StringBuffer buffer;
@@ -195,13 +195,12 @@ void json_binary_big_file_encode_test()
     std::cout << std::endl;
     {
         std::string content;
-        std::size_t content_size;
 
         sw.start();
-        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
             std::cout << "json_binary_utils::readFromFile():" << std::endl;
-            std::cout << "content_size = " << content_size << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
@@ -213,13 +212,12 @@ void json_binary_big_file_encode_test()
 
     {
         std::string content;
-        std::size_t content_size;
 
         sw.start();
-        if (json_binary<single_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+        if (json_binary<single_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
             std::cout << "json_binary<single_escape>::encodeFromFile():" << std::endl;
-            std::cout << "content_size = " << content_size << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
@@ -231,13 +229,12 @@ void json_binary_big_file_encode_test()
 
     {
         std::string content;
-        std::size_t content_size;
 
         sw.start();
-        if (json_binary<double_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+        if (json_binary<double_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
             std::cout << "json_binary<double_escape>::encodeFromFile():" << std::endl;
-            std::cout << "content_size = " << content_size << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
@@ -249,13 +246,12 @@ void json_binary_big_file_encode_test()
 
     {
         std::string content;
-        std::size_t content_size;
 
         sw.start();
-        if (json_binary_hex::encodeFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+        if (json_binary_hex::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
             std::cout << "json_binary_hex::encodeFromFile():" << std::endl;
-            std::cout << "content_size = " << content_size << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
