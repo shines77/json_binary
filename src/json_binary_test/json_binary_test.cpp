@@ -15,8 +15,10 @@
 #include "rapidjson/prettywriter.h" // for stringify JSON
 
 #include "json_binary.h"
+#include "stop_watch.h"
 
-#define TEST_BIN_FILENAME   "C:\\test_json_binary.bin"
+#define TEST_BIN_FILENAME       "C:\\test_json_binary.bin"
+#define TEST_BIG_BIN_FILENAME   "C:\\test_big_binary.bin"
 
 using namespace rapidjson;
 
@@ -186,6 +188,84 @@ void test_serialize_hex()
     std::cout << std::endl;
 }
 
+void json_binary_big_file_encode_test()
+{
+    StopWatch sw;
+
+    std::cout << std::endl;
+    {
+        std::string content;
+        std::size_t content_size;
+
+        sw.start();
+        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+            sw.stop();
+            std::cout << "json_binary_utils::readFromFile():" << std::endl;
+            std::cout << "content_size = " << content_size << std::endl;
+        }
+        else {
+            sw.stop();
+            std::cout << "json_binary_utils::readFromFile(): failure." << std::endl;
+        }
+        std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::string content;
+        std::size_t content_size;
+
+        sw.start();
+        if (json_binary<single_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+            sw.stop();
+            std::cout << "json_binary<single_escape>::encodeFromFile():" << std::endl;
+            std::cout << "content_size = " << content_size << std::endl;
+        }
+        else {
+            sw.stop();
+            std::cout << "json_binary<single_escape>::encodeFromFile(): failure." << std::endl;
+        }
+        std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::string content;
+        std::size_t content_size;
+
+        sw.start();
+        if (json_binary<double_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+            sw.stop();
+            std::cout << "json_binary<double_escape>::encodeFromFile():" << std::endl;
+            std::cout << "content_size = " << content_size << std::endl;
+        }
+        else {
+            sw.stop();
+            std::cout << "json_binary<double_escape>::encodeFromFile(): failure." << std::endl;
+        }
+        std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::string content;
+        std::size_t content_size;
+
+        sw.start();
+        if (json_binary_hex::encodeFromFile(TEST_BIG_BIN_FILENAME, content, content_size)) {
+            sw.stop();
+            std::cout << "json_binary_hex::encodeFromFile():" << std::endl;
+            std::cout << "content_size = " << content_size << std::endl;
+        }
+        else {
+            sw.stop();
+            std::cout << "json_binary_hex::encodeFromFile(): failure." << std::endl;
+        }
+        std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+        std::cout << std::endl;
+    }
+}
+
 int main(int argc, char * argv[])
 {
     test_simple_dom();
@@ -193,6 +273,8 @@ int main(int argc, char * argv[])
 
     test_simple_dom_hex();
     test_serialize_hex();
+
+    json_binary_big_file_encode_test();
 
     ::system("pause");
     return 0;

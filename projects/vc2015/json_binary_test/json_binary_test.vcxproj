@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\json_binary_test\json_binary.h" />
+    <ClInclude Include="..\..\..\src\json_binary_test\stop_watch.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C9BB17BD-94B0-4CE1-95D9-B5CB0C8D2360}</ProjectGuid>

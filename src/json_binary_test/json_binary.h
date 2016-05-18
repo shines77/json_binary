@@ -76,7 +76,9 @@ struct json_binary_utils
                 while (!ifs.eof()) {
                     ifs.read(current, kReadSize);
                     std::streamsize read_bytes = ifs.gcount();
+#ifndef NDEBUG
                     std::cout << "ReadBytes = " << read_bytes << std::endl;
+#endif
                     current += read_bytes;
                     read_total += read_bytes;
                 }
@@ -113,7 +115,9 @@ struct json_binary_utils
                         write_bytes = content_left;
                     ofs.write(current, write_bytes);
                     std::streampos written_bytes = ofs.tellp();
+#ifndef NDEBUG
                     std::cout << "WrittenBytes = " << written_bytes << std::endl;
+#endif
                     current += written_bytes;
                     written_total += written_bytes;
                     content_left -= write_bytes;
@@ -347,7 +351,7 @@ struct json_binary_hex
                 json_size = file_size * 2 + 1;
                 if (add_quote)
                     json_size += 3;
-                json_bin.reserve(json_size);
+                json_bin.resize(json_size);
 
                 static const std::streamsize kReadSize = 65536;
                 char buffer[kReadSize];
@@ -365,7 +369,9 @@ struct json_binary_hex
                     assert(json <= json_end);
                     std::size_t encode_bytes = json_binary_hex::encode(buffer, read_bytes, json, json_capacity, false);
                     encode_total += encode_bytes;
+#ifndef NDEBUG
                     std::cout << "ReadBytes = " << read_bytes << ", EscapeBytes = " << encode_bytes << std::endl;
+#endif
                     json += encode_bytes;
                     json_capacity -= encode_bytes;
                     if (json_capacity <= 0)
@@ -376,6 +382,7 @@ struct json_binary_hex
                     *json = '\0';
                 }
                 encode_size = json - json_start;
+                json_bin.resize(encode_size);
                 content.swap(json_bin);
                 ifs.close();
                 bSuccess = true;
@@ -399,16 +406,16 @@ struct json_binary
     json_binary() = default;
     ~json_binary() = default;
 
-    static std::size_t encode(char * json, std::size_t max_size, const char * data,
-        std::size_t length, bool fill_null = true) {
+    static std::size_t encode(const char * data, std::size_t data_len,
+        char * json, std::size_t max_size, bool fill_null = true) {
         char * src = const_cast<char *>(data);
-        char * src_end = src + length;
+        char * src_end = src + data_len;
         char * dest = json;
         char * dest_max = json + max_size;
         if (fill_null)
             dest_max -= 1;
         // The json buffer size must be large than data length.
-        assert(max_size >= length);
+        assert(max_size >= data_len);
         // dest can not overflow dest_max forever.
         while (src < src_end) {
             char c = *src;
@@ -438,10 +445,10 @@ struct json_binary
         return (dest - json);
     }
 
-    static std::size_t encode_safe(char * json, std::size_t max_size, const char * data,
-        std::size_t length, bool fill_null = true) {
+    static std::size_t encode_safe(const char * data, std::size_t data_len,
+        char * json, std::size_t max_size, bool fill_null = true) {
         char * src = const_cast<char *>(data);
-        char * src_end = src + length;
+        char * src_end = src + data_len;
         char * dest = json;
         char * dest_max = json + max_size;;
         if (fill_null)
@@ -481,13 +488,15 @@ struct json_binary
         return (dest - json);
     }
 
-    static std::size_t encode(char * dest, std::size_t offset, std::size_t max_size,
-        const char * src, std::size_t length, bool fill_null = true) {
-        return json_binary::encode(dest + offset, max_size, src, length, fill_null);
+    static std::size_t encode(const char * src, std::size_t src_len,
+        char * dest, std::size_t offset, std::size_t max_size,
+        bool fill_null = true) {
+        return json_binary::encode(src, src_len, dest + offset, max_size, fill_null);
     }
 
-    static std::size_t encode(std::string::iterator & dest_begin, std::string::iterator & dest_end,
-        const std::string::const_iterator & src_begin, const std::string::const_iterator & src_end,
+    static std::size_t encode(const std::string::const_iterator & src_begin,
+        const std::string::const_iterator & src_end,
+        std::string::iterator & dest_begin, std::string::iterator & dest_end,
         bool fill_null = true) {
         std::string::const_iterator src;
         std::string::iterator & dest = dest_begin;
@@ -518,13 +527,14 @@ struct json_binary
         return (dest - dest_begin);
     }
 
-    static std::size_t encode(std::string & dest, std::size_t offset, std::size_t max_size,
-        const std::string & src, std::size_t length, bool fill_null = true) {
+    static std::size_t encode(const std::string & src, std::size_t length,
+        std::string & dest, std::size_t offset, std::size_t max_size,
+        bool fill_null = true) {
         std::string::iterator & dest_begin = dest.begin() + offset;
         std::string::iterator & dest_end = dest_begin + max_size;
         std::string::const_iterator & src_begin = src.begin();
         std::string::const_iterator & src_end = src_begin + length;
-        return json_binary::encode(dest_begin, dest_end, src_begin, src_end, fill_null);
+        return json_binary::encode(src_begin, src_end, dest_begin, dest_end, fill_null);
     }
 
     static std::size_t encode(std::string & dest, std::size_t max_size,
@@ -557,7 +567,7 @@ struct json_binary
                     json_size = file_size * 2 + 1;
                 if (add_quote)
                     json_size += 3;
-                json_bin.reserve(json_size);
+                json_bin.resize(json_size);
 
                 static const std::streamsize kReadSize = 65536;
                 char buffer[kReadSize];
@@ -573,9 +583,11 @@ struct json_binary
                     ifs.read(buffer, kReadSize);
                     std::streamsize read_bytes = ifs.gcount();
                     assert(json <= json_end);
-                    std::size_t encode_bytes = json_binary::encode(json, json_capacity, buffer, read_bytes, false);
+                    std::size_t encode_bytes = json_binary::encode(buffer, read_bytes, json, json_capacity, false);
                     encode_total += encode_bytes;
+#ifndef NDEBUG
                     std::cout << "ReadBytes = " << read_bytes << ", EscapeBytes = " << encode_bytes << std::endl;
+#endif
                     json += encode_bytes;
                     json_capacity -= encode_bytes;
                     if (json_capacity <= 0)
@@ -586,6 +598,7 @@ struct json_binary
                     *json = '\0';
                 }
                 encode_size = json - json_start;
+                json_bin.resize(encode_size);
                 content.swap(json_bin);
                 ifs.close();
                 bSuccess = true;

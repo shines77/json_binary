@@ -19,5 +19,8 @@
     <ClInclude Include="..\..\..\src\json_binary_test\json_binary.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\json_binary_test\stop_watch.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
