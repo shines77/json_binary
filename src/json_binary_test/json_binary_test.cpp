@@ -188,11 +188,16 @@ void test_serialize_hex()
     std::cout << std::endl;
 }
 
-void json_binary_big_file_encode_test()
+void json_binary_big_file_test()
 {
     StopWatch sw;
 
     std::cout << std::endl;
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+    //
+    // json_binary_utils::readFromFile()
+    //
     {
         std::string content;
 
@@ -210,6 +215,11 @@ void json_binary_big_file_encode_test()
         std::cout << std::endl;
     }
 
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+    //
+    // json_binary<single_escape>
+    //
     {
         std::string content;
 
@@ -227,6 +237,11 @@ void json_binary_big_file_encode_test()
         std::cout << std::endl;
     }
 
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+    //
+    // json_binary<double_escape>
+    //
     {
         std::string content;
 
@@ -244,6 +259,11 @@ void json_binary_big_file_encode_test()
         std::cout << std::endl;
     }
 
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+    //
+    // json_binary_hex::encode()
+    //
     {
         std::string content;
 
@@ -259,7 +279,69 @@ void json_binary_big_file_encode_test()
         }
         std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
         std::cout << std::endl;
+
+        {
+            std::size_t buf_size = json_binary_hex::get_decode_capacity(content.length());
+            std::unique_ptr<char> buffer(new char[buf_size]);
+            sw.start();
+            std::streamsize decode_size = json_binary_hex::decode(content.c_str(), content.length(), buffer.get(), buf_size);
+            if (decode_size >= 0) {
+                sw.stop();
+                std::cout << "json_binary_hex::decode():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "decode_size = " << decode_size << std::endl;
+            }
+            else {
+                sw.stop();
+                std::cout << "json_binary_hex::decode(): failure." << std::endl;
+            }
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
     }
+
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+    //
+    // json_binary_hex::encode_std()
+    //
+    {
+        std::string content;
+
+        sw.start();
+        if (json_binary_hex::encodeStdFromFile(TEST_BIG_BIN_FILENAME, content)) {
+            sw.stop();
+            std::cout << "json_binary_hex::encodeStdFromFile():" << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
+        }
+        else {
+            sw.stop();
+            std::cout << "json_binary_hex::encodeStdFromFile(): failure." << std::endl;
+        }
+        std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+        std::cout << std::endl;
+
+        {
+            std::size_t buf_size = json_binary_hex::get_decode_capacity(content.length());
+            std::unique_ptr<char> buffer(new char[buf_size]);
+            sw.start();
+            std::streamsize decode_size = json_binary_hex::decode_std(content.c_str(), content.length(), buffer.get(), buf_size);
+            if (decode_size >= 0) {
+                sw.stop();
+                std::cout << "json_binary_hex::decode_std():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "decode_size = " << decode_size << std::endl;
+            }
+            else {
+                sw.stop();
+                std::cout << "json_binary_hex::decode_std(): failure." << std::endl;
+            }
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "-------------------------------------------------------------------" << std::endl;
 }
 
 int main(int argc, char * argv[])
@@ -270,7 +352,7 @@ int main(int argc, char * argv[])
     test_simple_dom_hex();
     test_serialize_hex();
 
-    json_binary_big_file_encode_test();
+    json_binary_big_file_test();
 
     ::system("pause");
     return 0;
