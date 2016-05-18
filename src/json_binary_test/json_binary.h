@@ -46,6 +46,91 @@ static const char escape_table[256] = {
 };
 #undef Z16
 
+struct json_binary_utils
+{
+    json_binary_utils() = default;
+    ~json_binary_utils() = default;
+
+    static bool readFromFile(const std::string & filename, std::string & content, std::size_t & content_size) {
+        bool bSuccess = false;
+        std::ifstream ifs;
+        try {
+            if (filename.empty())
+                return false;
+            ifs.open(filename.c_str(), std::ios::in | std::ios_base::binary);
+            if (ifs.is_open()) {
+                ifs.seekg(0, std::ios_base::end);
+                std::streampos spos_end = ifs.tellg();
+                std::streamsize file_size = spos_end;
+                file_size += 1;
+                if ((std::streamsize)content.length() < file_size)
+                    content.resize(file_size);
+                if ((std::streamsize)content.length() < file_size) {
+                    return (file_size == 0);
+                }
+                static const std::streamsize kReadSize = 65536;
+                char * current = &content[0];
+                char * content_end = current + content.capacity();
+                std::streamsize read_total = 0;
+                ifs.seekg(0, std::ios_base::beg);
+                while (!ifs.eof()) {
+                    ifs.read(current, kReadSize);
+                    std::streamsize read_bytes = ifs.gcount();
+                    std::cout << "ReadBytes = " << read_bytes << std::endl;
+                    current += read_bytes;
+                    read_total += read_bytes;
+                }
+                content_size = read_total;
+                ifs.close();
+                bSuccess = true;
+            }
+        }
+        catch (const std::exception & e) {
+            std::cout << "json_binary_utils::readFromFile() Exception: " << e.what() << std::endl;
+        }
+        return bSuccess;
+    }
+
+    static bool saveToFile(const std::string & filename, std::string & content, std::size_t content_size) {
+        bool bSuccess = false;
+        std::ofstream ofs;
+        try {
+            if (filename.empty())
+                return false;
+            ofs.open(filename.c_str(), std::ios::out | std::ios::trunc | std::ios_base::binary);
+            if (ofs.is_open()) {
+                static const std::streamsize kWriteSize = 65536;
+                std::streamsize content_left = content_size;
+                char * current = &content[0];
+                char * content_end = current + content.capacity();
+                std::streamsize write_bytes;
+                std::streamsize written_total = 0;
+                ofs.seekp(0, std::ios_base::beg);
+                while (!ofs.eof()) {
+                    if (content_left >= kWriteSize)
+                        write_bytes = kWriteSize;
+                    else
+                        write_bytes = content_left;
+                    ofs.write(current, write_bytes);
+                    std::streampos written_bytes = ofs.tellp();
+                    std::cout << "WrittenBytes = " << written_bytes << std::endl;
+                    current += written_bytes;
+                    written_total += written_bytes;
+                    content_left -= write_bytes;
+                    if (content_left <= 0)
+                        break;
+                }
+                ofs.close();
+                bSuccess = true;
+            }
+        }
+        catch (const std::exception & e) {
+            std::cout << "json_binary_utils::saveToFile() Exception: " << e.what() << std::endl;
+        }
+        return bSuccess;
+    }
+};
+
 struct json_binary_hex
 {
     json_binary_hex() = default;
@@ -449,85 +534,6 @@ struct json_binary
 
     static bool decode(std::string & content, const std::string & filename) {
         return true;
-    }
-
-    static bool readFromFile(const std::string & filename, std::string & content, std::size_t & content_size) {
-        bool bSuccess = false;
-        std::ifstream ifs;
-        try {
-            if (filename.empty())
-                return false;
-            ifs.open(filename.c_str(), std::ios::in | std::ios_base::binary);
-            if (ifs.is_open()) {
-                ifs.seekg(0, std::ios_base::end);
-                std::streampos spos_end = ifs.tellg();
-                std::streamsize file_size = spos_end;
-                file_size += 1;
-                if ((std::streamsize)content.length() < file_size)
-                    content.resize(file_size);
-                if ((std::streamsize)content.length() < file_size) {
-                    return (file_size == 0);
-                }
-                static const std::streamsize kReadSize = 65536;
-                char * current = &content[0];
-                char * content_end = current + content.capacity();
-                std::streamsize read_total = 0;
-                ifs.seekg(0, std::ios_base::beg);
-                while (!ifs.eof()) {
-                    ifs.read(current, kReadSize);
-                    std::streamsize read_bytes = ifs.gcount();
-                    std::cout << "ReadBytes = " << read_bytes << std::endl;
-                    current += read_bytes;
-                    read_total += read_bytes;
-                }
-                content_size = read_total;
-                ifs.close();
-                bSuccess = true;
-            }
-        }
-        catch (const std::exception & e) {
-            std::cout << "json_binary::readFromFile() Exception: " << e.what() << std::endl;
-        }
-        return bSuccess;
-    }
-
-    static bool saveToFile(const std::string & filename, std::string & content, std::size_t content_size) {
-        bool bSuccess = false;
-        std::ofstream ofs;
-        try {
-            if (filename.empty())
-                return false;
-            ofs.open(filename.c_str(), std::ios::out | std::ios::trunc | std::ios_base::binary);
-            if (ofs.is_open()) {
-                static const std::streamsize kWriteSize = 65536;
-                std::streamsize content_left = content_size;
-                char * current = &content[0];
-                char * content_end = current + content.capacity();
-                std::streamsize write_bytes;
-                std::streamsize written_total = 0;
-                ofs.seekp(0, std::ios_base::beg);
-                while (!ofs.eof()) {
-                    if (content_left >= kWriteSize)
-                        write_bytes = kWriteSize;
-                    else
-                        write_bytes = content_left;
-                    ofs.write(current, write_bytes);
-                    std::streampos written_bytes = ofs.tellp();
-                    std::cout << "WrittenBytes = " << written_bytes << std::endl;
-                    current += written_bytes;
-                    written_total += written_bytes;
-                    content_left -= write_bytes;
-                    if (content_left <= 0)
-                        break;
-                }
-                ofs.close();
-                bSuccess = true;
-            }
-        }
-        catch (const std::exception & e) {
-            std::cout << "json_binary::saveToFile() Exception: " << e.what() << std::endl;
-        }
-        return bSuccess;
     }
 
     static bool encodeFromFile(const std::string & filename, std::string & content,

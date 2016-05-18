@@ -16,6 +16,8 @@
 
 #include "json_binary.h"
 
+#define TEST_BIN_FILENAME   "C:\\test_json_binary.bin"
+
 using namespace rapidjson;
 
 class Employee {
@@ -88,7 +90,7 @@ public:
     }
 
     bool SaveContentToFile(const std::string & filename) {
-        return json_binary<double_escape>::saveToFile(filename, file_content_, content_size_);
+        return json_binary_utils::saveToFile(filename, file_content_, content_size_);
     }
 };
 
@@ -106,7 +108,7 @@ void test_simple_dom()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary<single_escape>::encodeFromFile("C:\\test_json_binary.bin", content, content_size, false);
+    json_binary<single_escape>::encodeFromFile(TEST_BIN_FILENAME, content, content_size, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
 
     // 3. Stringify the DOM
@@ -125,7 +127,7 @@ void test_serialize()
     std::vector<Employee> employees;
 
     Employee milo("Milo YIP", 34, true);
-    milo.EncodeFromFile("C:\\test_json_binary.bin", true);
+    milo.EncodeFromFile(TEST_BIN_FILENAME, true);
     milo.SaveContentToFile("C:\\test_json_binary_out.bin");
 
     StringBuffer sb;
@@ -152,7 +154,7 @@ void test_simple_dom_hex()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary_hex::encodeFromFile("C:\\test_json_binary.bin", content, content_size, false);
+    json_binary_hex::encodeFromFile(TEST_BIN_FILENAME, content, content_size, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
 
     // 3. Stringify the DOM
@@ -171,7 +173,7 @@ void test_serialize_hex()
     std::vector<Employee> employees;
 
     Employee milo("Milo YIP", 34, true);
-    milo.EncodeHexFromFile("C:\\test_json_binary.bin", true);
+    milo.EncodeHexFromFile(TEST_BIN_FILENAME, true);
     milo.SaveContentToFile("C:\\test_json_binary_hex_out.bin");
 
     StringBuffer sb;
