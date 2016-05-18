@@ -97,6 +97,19 @@ public:
     }
 };
 
+std::streamsize memory_compare(const char * buf1, const char * buf2, std::size_t length)
+{
+    char * src = (char *)buf2;
+    char * dest = (char *)buf1;
+    char * src_start = src;
+    char * src_end = src + length;
+    while (src < src_end) {
+        if (*dest++ != *src++)
+            return -(src - src_start);
+    }
+    return 0;
+}
+
 void test_simple_dom()
 {
     // 1. Parse a JSON string into DOM.
@@ -266,7 +279,7 @@ void json_binary_big_file_test()
     // json_binary_hex::encode()
     //
     {
-        std::string content;
+        std::string content, source;
 
         sw.start();
         if (json_binary_hex::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
@@ -285,6 +298,7 @@ void json_binary_big_file_test()
         if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
             std::cout << "json_binary_utils::readFromFile():" << std::endl;
             std::cout << "content_size = " << content.length() << std::endl;
+            source = content;
         }
         else {
             std::cout << "json_binary_utils::readFromFile(): failure." << std::endl;
@@ -323,6 +337,11 @@ void json_binary_big_file_test()
                 std::cout << "json_binary_hex::decode():" << std::endl;
                 std::cout << "content_size = " << content.length() << std::endl;
                 std::cout << "decode_size = " << decode_size << std::endl;
+                std::streamsize result = memory_compare(buffer.get(), source.c_str(), source.length());
+                if (result == 0 && std::memcmp(buffer.get(), source.c_str(), source.length()) == 0)
+                    std::cout << "decode() correctly." << std::endl;
+                else
+                    std::cout << "decode() error." << std::endl;
             }
             else {
                 sw.stop();
@@ -339,11 +358,12 @@ void json_binary_big_file_test()
     // acl_base64
     //
     {
-        std::string content;
+        std::string content, source;
 
         if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
             std::cout << "json_binary_utils::readFromFile():" << std::endl;
             std::cout << "content_size = " << content.length() << std::endl;
+            source = content;
         }
         else {
             std::cout << "json_binary_utils::readFromFile(): failure." << std::endl;
@@ -353,7 +373,7 @@ void json_binary_big_file_test()
         {
             sw.start();
             unsigned char * buffer = acl_base64_encode(content.c_str(), (int)content.length());
-            if (buffer != NULL) {
+            if (buffer != nullptr) {
                 sw.stop();
                 std::cout << "acl_base64::encode():" << std::endl;
                 std::cout << "content_size = " << content.length() << std::endl;
@@ -380,11 +400,17 @@ void json_binary_big_file_test()
                 std::cout << "content_size = " << content.length() << std::endl;
                 std::cout << "decode_size = " << decode_size << std::endl;
                 std::cout << "buffer = 0x" << std::ios::hex << (std::size_t)buffer << std::ios::dec << std::endl;
+                if (std::memcmp(buffer, source.c_str(), source.length()) == 0)
+                    std::cout << "decode() correctly." << std::endl;
+                else
+                    std::cout << "decode() error." << std::endl;
             }
             else {
                 sw.stop();
                 std::cout << "acl_base64::decode(): failure." << std::endl;
             }
+            if (buffer)
+                ::free(buffer);
             std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
             std::cout << std::endl;
         }

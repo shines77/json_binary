@@ -6,7 +6,12 @@
 #include <iostream>
 #include <fstream>
 
-#define LITTLE_EDAIAN   1
+/* 字节顺序定义值 */
+#define JIMI_LITTLE_ENDIAN         1
+#define JIMI_BIG_ENDIAN            2
+
+/* 字节顺序定义: 小端或大端, 未定义时, 默认值为小端. */
+#define JIMI_BYTE_ORDER            JIMI_LITTLE_ENDIAN
 
 static const char hex_u_table[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -18,7 +23,7 @@ static const char hex_l_table[16] = {
     'a', 'b', 'c', 'd', 'e', 'f'
 };
 
-#if defined(LITTLE_EDAIAN) && (LITTLE_EDAIAN > 0)
+#if !defined(JIMI_BYTE_ORDER) || (JIMI_BYTE_ORDER == JIMI_LITTLE_ENDIAN)
 static const unsigned short hex_upper_256[] = {
     0x3030, 0x3130, 0x3230, 0x3330, 0x3430, 0x3530, 0x3630, 0x3730,     // 00~07
     0x3830, 0x3930, 0x4130, 0x4230, 0x4330, 0x4430, 0x4530, 0x4630,     // 08~0F
@@ -97,9 +102,9 @@ static const char hex_lookup_256[256] = {
      F16,                                                                               // 10~1F
      F16,                                                                               // 20~2F
        0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  -1,  -1,  -1,  -1,  -1,  -1,    // 30~3F
-      10,  11,  12,  13,  14,  15,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,    // 40~4F
+      -1,  10,  11,  12,  13,  14,  15,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,    // 40~4F
      F16,                                                                               // 50~5F
-      10,  11,  12,  13,  14,  15,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,    // 60~6F
+      -1,  10,  11,  12,  13,  14,  15,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,    // 60~6F
      F16,                                                                               // 70~7F
      F16, F16, F16, F16, F16, F16, F16, F16                                             // 80~FF
 };
@@ -120,11 +125,8 @@ static const char escape_table[256] = {
 };
 #undef Z16
 
-struct json_binary_utils
+namespace json_binary_utils
 {
-    json_binary_utils() = default;
-    ~json_binary_utils() = default;
-
     static bool readFromFile(const std::string & filename, std::string & content) {
         bool bSuccess = false;
         std::ifstream ifs;
@@ -675,52 +677,14 @@ struct json_binary
         return json_binary::encode(src, src_len, dest + offset, max_size, fill_null);
     }
 
-    static std::size_t encode(const std::string::const_iterator & src_begin,
-        const std::string::const_iterator & src_end,
-        std::string::iterator & dest_begin, std::string::iterator & dest_end,
-        bool fill_null = true) {
-        std::string::const_iterator src;
-        std::string::iterator & dest = dest_begin;
-        // dest must be not overflow dest_end forever.
-        for (src = src_begin; src != src_end; ++src) {
-            char c = *src;
-            char escape = escape_table[c];
-            if (escape == 0) {
-                *dest++ = c;
-                assert(dest != dest_end);
-                src++;
-            }
-            else {
-                if (isDoubleEscape) {
-                    // '\\', '\"', '\/'
-                    if (c > 32)
-                        *dest++ = '\\';
-                    *dest++ = '\\';
-                }
-                *dest++ = '\\';
-                *dest++ = escape;
-                assert(dest != dest_end);
-                src++;
-            }
-        }
-        if (fill_null)
-            *dest = '\0';
-        return (dest - dest_begin);
+    static std::size_t encode(const char * src, std::size_t src_len,
+        std::string & dest, bool fill_null = true) {
+        return json_binary::encode(src, src_len, dest, std::string::max_size(), fill_null);
     }
 
-    static std::size_t encode(const std::string & src, std::size_t src_len,
-        std::string & dest, std::size_t offset, std::size_t max_size,
-        bool fill_null = true) {
-        std::string::iterator & dest_begin = dest.begin() + offset;
-        std::string::iterator & dest_end = dest_begin + max_size;
-        std::string::const_iterator & src_begin = src.begin();
-        std::string::const_iterator & src_end = src_begin + src_len;
-        return json_binary::encode(src_begin, src_end, dest_begin, dest_end, fill_null);
-    }
-
-    static std::size_t encode(const std::string & src, std::size_t src_len,
-        std::string & dest, std::size_t max_size, bool fill_null = true) {
-        return json_binary::encode(src, src_len, dest, 0, max_size, fill_null);
+    static std::size_t encode(const std::string & src,
+        std::string & dest, bool fill_null = true) {
+        return json_binary::encode(src, src.length(), dest, std::string::max_size(), fill_null);
     }
 
     static bool decode(std::string & content, const std::string & filename) {
