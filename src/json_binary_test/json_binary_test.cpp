@@ -15,6 +15,7 @@
 #include "rapidjson/prettywriter.h" // for stringify JSON
 
 #include "json_binary.h"
+#include "acl_base64.h"
 #include "stop_watch.h"
 
 #define TEST_BIN_FILENAME       "C:\\test_json_binary.bin"
@@ -280,6 +281,38 @@ void json_binary_big_file_test()
         std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
         std::cout << std::endl;
 
+        content.clear();
+        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
+            std::cout << "json_binary_utils::readFromFile():" << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
+        }
+        else {
+            std::cout << "json_binary_utils::readFromFile(): failure." << std::endl;
+        }
+        std::cout << std::endl;
+
+        std::cout << "-------------------------------------------------------------------" << std::endl;
+
+        {
+            std::size_t buf_size = json_binary_hex::get_encode_capacity(content.length());
+            std::unique_ptr<char> buffer(new char[buf_size]);
+            sw.start();
+            std::streamsize encode_size = json_binary_hex::encode(content.c_str(), content.length(), buffer.get(), buf_size);
+            if (encode_size >= 0) {
+                sw.stop();
+                std::cout << "json_binary_hex::encode():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "encode_size = " << encode_size << std::endl;
+                content = buffer.get();
+            }
+            else {
+                sw.stop();
+                std::cout << "json_binary_hex::encode(): failure." << std::endl;
+            }
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+
         {
             std::size_t buf_size = json_binary_hex::get_decode_capacity(content.length());
             std::unique_ptr<char> buffer(new char[buf_size]);
@@ -302,6 +335,64 @@ void json_binary_big_file_test()
 
     std::cout << "-------------------------------------------------------------------" << std::endl;
 
+    //
+    // acl_base64
+    //
+    {
+        std::string content;
+
+        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
+            std::cout << "json_binary_utils::readFromFile():" << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
+        }
+        else {
+            std::cout << "json_binary_utils::readFromFile(): failure." << std::endl;
+        }
+        std::cout << std::endl;
+
+        {
+            sw.start();
+            unsigned char * buffer = acl_base64_encode(content.c_str(), (int)content.length());
+            if (buffer != NULL) {
+                sw.stop();
+                std::cout << "acl_base64::encode():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "encode_size = " << std::strlen((const char *)buffer) << std::endl;
+                content = (const char *)buffer;
+            }
+            else {
+                sw.stop();
+                std::cout << "acl_base64::encode(): failure." << std::endl;
+            }
+            if (buffer)
+                ::free(buffer);
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+
+        {
+            char * buffer = nullptr;
+            sw.start();
+            int decode_size = acl_base64_decode(content.c_str(), &buffer);
+            if (decode_size >= 0) {
+                sw.stop();
+                std::cout << "acl_base64::decode():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "decode_size = " << decode_size << std::endl;
+                std::cout << "buffer = 0x" << std::ios::hex << (std::size_t)buffer << std::ios::dec << std::endl;
+            }
+            else {
+                sw.stop();
+                std::cout << "acl_base64::decode(): failure." << std::endl;
+            }
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+#if 0
     //
     // json_binary_hex::encode_std()
     //
@@ -342,6 +433,7 @@ void json_binary_big_file_test()
     }
 
     std::cout << "-------------------------------------------------------------------" << std::endl;
+#endif
 }
 
 int main(int argc, char * argv[])
@@ -353,6 +445,9 @@ int main(int argc, char * argv[])
     test_serialize_hex();
 
     json_binary_big_file_test();
+
+    //get_hex_upper_256();
+    //get_hex_upper_256_big();
 
     ::system("pause");
     return 0;
