@@ -577,11 +577,12 @@ struct json_binary
         while (src < src_end) {
             unsigned char c = *src;
             if (c != '\\') {
+                // c is non '\\'.
                 *dest++ = c;
                 src++;
             }
             else {
-                // if (c == '\\')
+                // c is '\\'.
                 src++;
                 unsigned char e = *src;
                 char unescape = unescape_table_256[e];
@@ -611,7 +612,7 @@ struct json_binary
         if (fill_null)
             dest_max -= 1;
         // The dest json decode buffer size must be less than src json length.
-        assert(max_size <= json_len);
+        assert(max_size >= json_len);
         // dest can not overflow dest_max forever.
         if (skip_quote && (*src == '\"'))
             src++;
@@ -619,6 +620,7 @@ struct json_binary
             unsigned char c = *src;
             unsigned char e, unescape;
             if (c != '\\') {
+                // c is non '\\'.
                 *dest++ = c;
                 src++;
             }
@@ -627,9 +629,11 @@ struct json_binary
                 break;
             }
             else {
+                // c is '\\'.
                 src++;
                 c = *src;
                 if (c == '\\') {
+                    // src is two "\\".
                     src++;
                     e = *src;
                     if (e != '\\') {
@@ -645,6 +649,7 @@ struct json_binary
                         src++;
                     }
                     else {
+                        // src is three "\\".
                         // "\\\x" -> "\/", "\"", "\\"
                         src++;
                         e = *src;

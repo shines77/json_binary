@@ -196,11 +196,12 @@ static std::size_t bin_escape_decode(const char * data, std::size_t data_len,
     while (src < src_end) {
         unsigned char c = *src;
         if (c != '\\') {
+            // c is non '\\'.
             *dest++ = c;
             src++;
         }
         else {
-            // if (c == '\\')
+            // c is '\\'.
             src++;
             unsigned char e = *src;
             unsigned char unescape = unescape_table_256[e];
@@ -238,6 +239,7 @@ static std::size_t bin_escape_decode_twice(const char * data, std::size_t data_l
         unsigned char c = *src;
         unsigned char e, unescape;
         if (c != '\\') {
+            // c is non '\\'.
             *dest++ = c;
             src++;
         }
@@ -246,9 +248,11 @@ static std::size_t bin_escape_decode_twice(const char * data, std::size_t data_l
             break;
         }
         else {
+            // c is '\\'.
             src++;
             c = *src;
             if (c == '\\') {
+                // src is two "\\".
                 src++;
                 e = *src;
                 if (e != '\\') {
@@ -264,6 +268,7 @@ static std::size_t bin_escape_decode_twice(const char * data, std::size_t data_l
                     src++;
                 }
                 else {
+                    // src is three "\\".
                     // "\\\x" -> "\/", "\"", "\\"
                     src++;
                     e = *src;
