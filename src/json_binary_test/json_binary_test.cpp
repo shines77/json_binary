@@ -17,6 +17,7 @@
 #include "json_binary.h"
 #include "acl_base64.h"
 #include "stop_watch.h"
+#include "hex_table_256.h"
 
 #define TEST_BIN_FILENAME       "C:\\test_json_binary.bin"
 #define TEST_BIG_BIN_FILENAME   "C:\\test_big_binary.bin"
@@ -355,6 +356,67 @@ void json_binary_big_file_test()
     std::cout << "-------------------------------------------------------------------" << std::endl;
 
     //
+    // acl_base64 for C++
+    //
+    {
+        std::string content, source;
+
+        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
+            std::cout << "json_binary_utils::readFromFile():" << std::endl;
+            std::cout << "content_size = " << content.length() << std::endl;
+            source = content;
+        }
+        else {
+            std::cout << "json_binary_utils::readFromFile(): failure." << std::endl;
+        }
+        std::cout << std::endl;
+
+        {
+            std::string encoded;
+            sw.start();
+            encoded = base64_encode(content.c_str(), (int)content.length());
+            if (encoded.length() > 0) {
+                sw.stop();
+                std::cout << "acl_base64_cpp::encode():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "encode_size = " << encoded.length() << std::endl;
+                content = encoded;
+            }
+            else {
+                sw.stop();
+                std::cout << "acl_base64_cpp::encode(): failure." << std::endl;
+            }
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+
+        {
+            std::string decoded;
+            sw.start();
+            decoded = base64_decode(content);
+            if (decoded.length() > 0) {
+                sw.stop();
+                std::cout << "acl_base64_cpp::decode():" << std::endl;
+                std::cout << "content_size = " << content.length() << std::endl;
+                std::cout << "decode_size = " << decoded.length() << std::endl;
+                std::cout << "buffer = 0x" << std::hex << (std::size_t)decoded.c_str() << std::dec << std::endl;
+                if (std::memcmp(decoded.c_str(), source.c_str(), source.length()) == 0)
+                    std::cout << "decode() correctly." << std::endl;
+                else
+                    std::cout << "decode() error." << std::endl;
+            }
+            else {
+                sw.stop();
+                std::cout << "acl_base64_cpp::decode(): failure." << std::endl;
+            }
+            std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+    //
     // acl_base64
     //
     {
@@ -399,7 +461,7 @@ void json_binary_big_file_test()
                 std::cout << "acl_base64::decode():" << std::endl;
                 std::cout << "content_size = " << content.length() << std::endl;
                 std::cout << "decode_size = " << decode_size << std::endl;
-                std::cout << "buffer = 0x" << std::ios::hex << (std::size_t)buffer << std::ios::dec << std::endl;
+                std::cout << "buffer = 0x" << std::hex << (std::size_t)buffer << std::dec << std::endl;
                 if (std::memcmp(buffer, source.c_str(), source.length()) == 0)
                     std::cout << "decode() correctly." << std::endl;
                 else
@@ -462,8 +524,55 @@ void json_binary_big_file_test()
 #endif
 }
 
+void test_std_string()
+{
+    {
+        std::string str;
+        str = "";
+        str += "0";
+        str += "abcdef";
+
+        char * buffer = &str[0];
+        const char * data = str.data();
+        const char * c_str = str.c_str();
+
+        std::cout << "str = " << str << std::endl;
+        std::cout << "str.data() = " << str.data() << std::endl;
+        std::cout << "str.c_str() = " << str.c_str() << std::endl;
+
+        std::cout << "&str[0] = 0x" << std::hex << (std::size_t)buffer << std::endl;
+        std::cout << "str.data() = 0x" << std::hex << (std::size_t)data << std::endl;
+        std::cout << "str.c_str() = 0x" << std::hex << (std::size_t)c_str << std::endl;
+        std::cout << std::dec << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::string str;
+        str = "abc\0de";
+        str += "\0\0";
+        str += "abcdefghijklmnopqrstuvwxyz123456";
+
+        char * buffer = &str[0];
+        const char * data = str.data();
+        const char * c_str = str.c_str();
+
+        std::cout << "str = " << str << std::endl;
+        std::cout << "str.data() = " << str.data() << std::endl;
+        std::cout << "str.c_str() = " << str.c_str() << std::endl;
+
+        std::cout << "&str[0] = 0x" << std::hex << (std::size_t)buffer << std::endl;
+        std::cout << "str.data() = 0x" << std::hex << (std::size_t)data << std::endl;
+        std::cout << "str.c_str() = 0x" << std::hex << (std::size_t)c_str << std::endl;
+        std::cout << std::dec << str.capacity() << std::endl;
+        std::cout << std::endl;
+    }
+}
+
 int main(int argc, char * argv[])
 {
+    //test_std_string();
+
     test_simple_dom();
     test_serialize();
 
@@ -472,8 +581,10 @@ int main(int argc, char * argv[])
 
     json_binary_big_file_test();
 
-    //get_hex_upper_256();
-    //get_hex_upper_256_big();
+#if 0
+    get_hex_upper_256();
+    get_hex_upper_256_big();
+#endif
 
     ::system("pause");
     return 0;

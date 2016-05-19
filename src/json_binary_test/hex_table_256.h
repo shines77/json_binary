@@ -89,3 +89,48 @@ void get_hex_upper_256_big()
         std::cout << "get_hex_upper_256() Exception: " << e.what() << std::endl;
     }
 }
+
+void test_std_string()
+{
+    {
+        std::string str;
+        str = "";
+        str += "0";
+        str += "abcdef";
+
+        char * buffer = &str[0];
+        const char * data = str.data();
+        const char * c_str = str.c_str();
+
+        std::cout << "str = " << str << std::endl;
+        std::cout << "str.data() = " << str.data() << std::endl;
+        std::cout << "str.c_str() = " << str.c_str() << std::endl;
+
+        std::cout << "&str[0] = 0x" << std::hex << (std::size_t)buffer << std::endl;
+        std::cout << "str.data() = 0x" << std::hex << (std::size_t)data << std::endl;
+        std::cout << "str.c_str() = 0x" << std::hex << (std::size_t)c_str << std::endl;
+        std::cout << std::dec << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::string str;
+        str = "abc\0de";
+        str += "\0\0";
+        str += "abcdefghijklmnopqrstuvwxyz123456";
+
+        char * buffer = &str[0];
+        const char * data = str.data();
+        const char * c_str = str.c_str();
+
+        std::cout << "str = " << str << std::endl;
+        std::cout << "str.data() = " << str.data() << std::endl;
+        std::cout << "str.c_str() = " << str.c_str() << std::endl;
+
+        std::cout << "&str[0] = 0x" << std::hex << (std::size_t)buffer << std::endl;
+        std::cout << "str.data() = 0x" << std::hex << (std::size_t)data << std::endl;
+        std::cout << "str.c_str() = 0x" << std::hex << (std::size_t)c_str << std::endl;
+        std::cout << std::dec << str.capacity() << std::endl;
+        std::cout << std::endl;
+    }
+}

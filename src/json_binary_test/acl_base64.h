@@ -114,3 +114,95 @@ int acl_base64_decode(const char * in, char ** pptr_in)
 	*result = 0;
 	return (int) (result - *pptr);
 }
+
+static std::string base64_encode(const char *in, int len)
+{
+	const unsigned char * clear = (const unsigned char *)in;
+
+	std::string encoded;
+	encoded.resize(4 * ((len + 2) / 3) + 1);
+	auto p = &encoded[0];
+
+	while (len-- > 0)
+	{
+		register int x, y;
+
+		x = *clear++;
+		*p++ = to_b64_tab[(x >> 2) & 63];
+
+		if (len-- <= 0)
+		{
+			*p++ = to_b64_tab[(x << 4) & 63];
+			*p++ = '=';
+			*p++ = '=';
+			break;
+		}
+
+		y = *clear++;
+		*p++ = to_b64_tab[((x << 4) | ((y >> 4) & 15)) & 63];
+
+		if (len-- <= 0)
+		{
+			*p++ = to_b64_tab[(y << 2) & 63];
+			*p++ = '=';
+			break;
+		}
+
+		x = *clear++;
+		*p++ = to_b64_tab[((y << 2) | ((x >> 6) & 3)) & 63];
+
+		*p++ = to_b64_tab[x & 63];
+	}
+
+	//*p = '\0';
+    encoded.resize(p - &encoded[0]);
+    encoded += '\0';
+	return encoded;
+}
+
+
+static std::string base64_decode(const std::string & in)
+{
+	std::string decoded;
+	decoded.resize(3 * (in.size() / 4) + 1);
+	auto p = &decoded[0];
+
+	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
+	quantum this may decode to 1, 2, or 3 output bytes. */
+
+	auto it = in.cbegin();
+	register int x, y;
+	while ((x = (*it++)) != 0)
+	{
+		if (x > 127 || (x = un_b64_tab[x]) == 255)
+			return{};
+		if ((y = (*it++)) == 0 || (y = un_b64_tab[y]) == 255)
+			return{};
+		*p++ = (x << 2) | (y >> 4);
+
+		if ((x = (*it++)) == '=')
+		{
+			if (*it++ != '=' || *it != 0)
+				return{};
+		}
+		else
+		{
+			if (x > 127 || (x = un_b64_tab[x]) == 255)
+				return{};
+			*p++ = (y << 4) | (x >> 2);
+			if ((y = (*it++)) == '=') {
+				if (*it != 0)
+					return{};
+			}
+			else
+			{
+				if (y > 127 || (y = un_b64_tab[y]) == 255)
+					return{};
+				*p++ = (x << 6) | y;
+			}
+		}
+	}
+
+	decoded.resize(p - &decoded[0]);
+	return decoded;
+}
