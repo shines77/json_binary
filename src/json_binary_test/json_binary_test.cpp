@@ -125,7 +125,7 @@ void test_simple_dom()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary<once_escape>::encodeFromFile(TEST_BIN_FILENAME, content, false);
+    json_binary<one_escape>::encodeFromFile(TEST_BIN_FILENAME, content, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content_size);  
 
     // 3. Stringify the DOM
@@ -239,14 +239,14 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary<once_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary<one_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
             sw.stop();
-            std::cout << "json_binary<once_escape>::encodeFromFile():" << std::endl;
+            std::cout << "json_binary<one_escape>::encodeFromFile():" << std::endl;
             std::cout << "content_size = " << content.length() << std::endl;
         }
         else {
             sw.stop();
-            std::cout << "json_binary<once_escape>::encodeFromFile(): failure." << std::endl;
+            std::cout << "json_binary<one_escape>::encodeFromFile(): failure." << std::endl;
         }
         std::cout << "time spent: " << sw.getMillisec() << " ms." << std::endl;
         std::cout << std::endl;
@@ -522,51 +522,6 @@ void json_binary_big_file_test()
 
     std::cout << "-------------------------------------------------------------------" << std::endl;
 #endif
-}
-
-void test_std_string()
-{
-    {
-        std::string str;
-        str = "";
-        str += "0";
-        str += "abcdef";
-
-        char * buffer = &str[0];
-        const char * data = str.data();
-        const char * c_str = str.c_str();
-
-        std::cout << "str = " << str << std::endl;
-        std::cout << "str.data() = " << str.data() << std::endl;
-        std::cout << "str.c_str() = " << str.c_str() << std::endl;
-
-        std::cout << "&str[0] = 0x" << std::hex << (std::size_t)buffer << std::endl;
-        std::cout << "str.data() = 0x" << std::hex << (std::size_t)data << std::endl;
-        std::cout << "str.c_str() = 0x" << std::hex << (std::size_t)c_str << std::endl;
-        std::cout << std::dec << std::endl;
-        std::cout << std::endl;
-    }
-
-    {
-        std::string str;
-        str = "abc\0de";
-        str += "\0\0";
-        str += "abcdefghijklmnopqrstuvwxyz123456";
-
-        char * buffer = &str[0];
-        const char * data = str.data();
-        const char * c_str = str.c_str();
-
-        std::cout << "str = " << str << std::endl;
-        std::cout << "str.data() = " << str.data() << std::endl;
-        std::cout << "str.c_str() = " << str.c_str() << std::endl;
-
-        std::cout << "&str[0] = 0x" << std::hex << (std::size_t)buffer << std::endl;
-        std::cout << "str.data() = 0x" << std::hex << (std::size_t)data << std::endl;
-        std::cout << "str.c_str() = 0x" << std::hex << (std::size_t)c_str << std::endl;
-        std::cout << std::dec << str.capacity() << std::endl;
-        std::cout << std::endl;
-    }
 }
 
 int main(int argc, char * argv[])

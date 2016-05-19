@@ -115,7 +115,7 @@ int acl_base64_decode(const char * in, char ** pptr_in)
 	return (int) (result - *pptr);
 }
 
-static std::string base64_encode(const char *in, int len)
+static std::string base64_encode(const char * in, int len)
 {
 	const unsigned char * clear = (const unsigned char *)in;
 
@@ -168,7 +168,7 @@ static std::string base64_decode(const std::string & in)
 	auto p = &decoded[0];
 
 	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
-	quantum this may decode to 1, 2, or 3 output bytes. */
+	   quantum this may decode to 1, 2, or 3 output bytes. */
 
 	auto it = in.cbegin();
 	register int x, y;

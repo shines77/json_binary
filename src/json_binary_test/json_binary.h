@@ -238,15 +238,10 @@ namespace json_binary_hex
         return capacity;
     }
 
-    static std::size_t get_decode_capacity(std::size_t data_length, bool add_quote = false) {
+    static std::size_t get_decode_capacity(std::size_t data_length) {
         std::size_t capacity = data_length;
         // One char convent to two Hex strings.
         capacity = (capacity + 1) / 2;
-        // Add double quote and nullor format like: "xxxxxx" '\0'
-        if (add_quote)
-            capacity += 3;
-        else
-            capacity += 1;
         return capacity;
     }
 
@@ -257,7 +252,7 @@ namespace json_binary_hex
         assert(buffer != nullptr);
         const char * src_end = src + src_len;
         char * dest = buffer;
-        if (((std::size_t)buffer & 02U) == 0) {
+        if (((std::size_t)buffer & 0x02U) == 0) {
             unsigned short * dest16 = (unsigned short *)buffer;
             while (src < src_end) {
                 unsigned char c = (unsigned char)(*src);
@@ -309,7 +304,7 @@ namespace json_binary_hex
         while (src < src_end) {
             unsigned char c = (unsigned char)(*src);
             unsigned int hex1, hex2;
-            hex1 = c >> 4;
+            hex1 = c >> 4U;
             hex2 = c & 0x0FU;
             if (hex1 <= 9)
                 *dest = hex1 + '0';
@@ -346,8 +341,7 @@ namespace json_binary_hex
         return json_binary_hex::encode(src.c_str(), src.length(), dest, fill_null);
     }
 
-    static std::streamsize decode(const char * src, std::size_t src_len, char * buffer,
-        std::size_t buf_size, bool fill_null = false) {
+    static std::streamsize decode(const char * src, std::size_t src_len, char * buffer, std::size_t buf_size) {
         assert(src != nullptr);
         assert(buffer != nullptr);
         // src_len must be multiply of 2.
@@ -385,14 +379,11 @@ namespace json_binary_hex
             *dest++ = hex;
             src += 2;
         }
-        if (fill_null)
-            *dest = '\0';
         assert(dest >= buffer);
         return (dest - buffer);
     }
 
-    static std::streamsize decode_std(const char * src, std::size_t src_len, char * buffer,
-        std::size_t buf_size, bool fill_null = false) {
+    static std::streamsize decode_std(const char * src, std::size_t src_len, char * buffer, std::size_t buf_size) {
         assert(src != nullptr);
         assert(buffer != nullptr);
         // src_len must be multiply of 2.
@@ -442,28 +433,22 @@ namespace json_binary_hex
             *dest++ = hex;
             src += 2;
         }
-        if (fill_null)
-            *dest = '\0';
         assert(dest >= buffer);
         return (dest - buffer);
     }
 
-    static std::streamsize decode(const char * src, std::size_t src_len, std::string & dest, bool fill_null = false) {
+    static std::streamsize decode(const char * src, std::size_t src_len, std::string & dest) {
         std::size_t alloc_size = json_binary_hex::get_decode_capacity(src_len);
         dest.resize(alloc_size);
         char * buffer = &dest[0];
-        std::streamsize decode_size = json_binary_hex::decode(src, src_len, buffer, dest.capacity(), fill_null);
-        if (decode_size >= 0) {
-            if (fill_null)
-                dest.resize(decode_size);
-            else
-                dest.resize(decode_size + 1);
-        }
+        std::streamsize decode_size = json_binary_hex::decode(src, src_len, buffer, dest.capacity());
+        if (decode_size >= 0)
+            dest.resize(decode_size);
         return decode_size;
     }
 
-    static std::streamsize decode(const std::string & src, std::string & dest, bool fill_null = false) {
-        return json_binary_hex::decode(src.c_str(), src.length(), dest, fill_null);
+    static std::streamsize decode(const std::string & src, std::string & dest) {
+        return json_binary_hex::decode(src.c_str(), src.length(), dest);
     }
 
     static bool encodeFromFile(const std::string & filename, std::string & content, bool add_quote = false) {
@@ -592,11 +577,11 @@ namespace json_binary_hex
 };
 
 enum double_escape_t {
-    once_escape = false,
+    one_escape = false,
     twice_escape = true
 };
 
-template <bool isDoubleEscape = once_escape>
+template <bool isTwiceEscape = one_escape>
 struct json_binary
 {
     json_binary() = default;
@@ -622,7 +607,7 @@ struct json_binary
                 src++;
             }
             else {
-                if (isDoubleEscape) {
+                if (isTwiceEscape) {
                     // '\\', '\"', '\/'
                     if (c > 32)
                         *dest++ = '\\';
@@ -662,7 +647,7 @@ struct json_binary
                 src++;
             }
             else {
-                if (isDoubleEscape) {
+                if (isTwiceEscape) {
                     // '\\', '\"', '\/'
                     if (c > 32)
                         *dest++ = '\\';
@@ -700,7 +685,7 @@ struct json_binary
         return json_binary::encode(src, src.length(), dest, std::string::max_size(), fill_null);
     }
 
-    static std::size_t decode(const char * json, std::size_t json_len,
+    static std::size_t decode_one_escape(const char * json, std::size_t json_len,
         char * dest, std::size_t max_size, bool fill_null = true) {
         char * src = const_cast<char *>(json);
         char * src_end = src + data_len;
@@ -832,7 +817,7 @@ struct json_binary
 
                 std::string json_bin;
                 std::size_t json_size;
-                if (isDoubleEscape)
+                if (isTwiceEscape)
                     json_size = file_size * 4 + 1;
                 else
                     json_size = file_size * 2 + 1;
