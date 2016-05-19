@@ -23,8 +23,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\json_binary_test\acl_base64.h" />
+    <ClInclude Include="..\..\..\src\json_binary_test\bin_escape.h" />
     <ClInclude Include="..\..\..\src\json_binary_test\hex_table_256.h" />
     <ClInclude Include="..\..\..\src\json_binary_test\json_binary.h" />
+    <ClInclude Include="..\..\..\src\json_binary_test\json_hex16.h" />
     <ClInclude Include="..\..\..\src\json_binary_test\stop_watch.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

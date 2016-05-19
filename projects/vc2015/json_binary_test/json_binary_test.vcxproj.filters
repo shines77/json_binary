@@ -28,5 +28,11 @@
     <ClInclude Include="..\..\..\src\json_binary_test\hex_table_256.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\json_binary_test\json_hex16.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\json_binary_test\bin_escape.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
