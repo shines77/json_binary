@@ -8,6 +8,7 @@
 #include <fstream>
 #include <memory>
 #include <iostream>
+#include <exception>
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -19,8 +20,8 @@
 #include "stop_watch.h"
 #include "hex_table_256.h"
 
-#define TEST_BIN_FILENAME       "C:\\test_json_binary.bin"
-#define TEST_BIG_BIN_FILENAME   "C:\\test_big_binary.bin"
+#define TEST_BIN_FILENAME       "..\\..\\data\\test.bin"
+#define TEST_BIG_BIN_FILENAME   "..\\..\\data\\big.bin"
 
 using namespace rapidjson;
 
@@ -30,15 +31,14 @@ private:
     unsigned age_;
     bool married_;
     std::string dependents_;
-    std::string file_content_;
-    std::size_t content_size_;
+    std::string binary_data_;
 
 public:
     Employee(const std::string& name, unsigned age, bool married) : name_(name), age_(age),
-        married_(married), dependents_(""), file_content_(""), content_size_(0) {}
+        married_(married), dependents_(""), binary_data_("") {}
     Employee(const Employee& rhs) : name_(rhs.name_), age_(rhs.age_),
         married_(rhs.married_), dependents_(rhs.dependents_),
-        file_content_(rhs.file_content_), content_size_(rhs.content_size_) {
+        binary_data_(rhs.binary_data_) {
         if (this != &rhs) {
             //
         }
@@ -51,8 +51,7 @@ public:
             this->age_ = rhs.age_;
             this->married_ = rhs.married_;
             this->dependents_ = rhs.dependents_;
-            this->file_content_ = rhs.file_content_;
-            this->content_size_ = rhs.content_size_;
+            this->binary_data_ = rhs.binary_data_;
         }
         return *this;
     }
@@ -74,23 +73,77 @@ public:
         writer.String(dependents_.c_str());
 
         writer.String("binary-hex");
-        writer.RawValue(file_content_.c_str(), file_content_.length(), kStringType);
+        writer.RawValue(binary_data_.c_str(), binary_data_.length(), kStringType);
 
         writer.EndObject();
     }
 
     bool EncodeFromFile(const std::string & filename, bool add_quote = false) {
-        return json_binary<twice_escape>::encodeFromFile(filename, file_content_, add_quote);
+        return json_binary<twice_escape>::encodeFromFile(filename, binary_data_, add_quote);
     }
 
     bool EncodeHexFromFile(const std::string & filename, bool add_quote = false) {
-        return json_binary_hex::encodeFromFile(filename, file_content_, add_quote);
+        return json_binary_hex::encodeFromFile(filename, binary_data_, add_quote);
     }
 
     bool SaveContentToFile(const std::string & filename) {
-        return json_binary_utils::saveToFile(filename, file_content_, file_content_.length());
+        return json_binary_utils::saveToFile(filename, binary_data_, binary_data_.length());
     }
 };
+
+bool touch_file(const std::string & filename)
+{
+    bool bSuccess = false;
+    std::ifstream ifs;
+    try {
+        if (filename.empty())
+            return false;
+        ifs.open(filename.c_str(), std::ios::in | std::ios_base::binary);
+        if (ifs.is_open()) {
+            bSuccess = true;
+            ifs.close();
+        }
+    }
+    catch (const std::exception & e) {
+        std::cout << "json_binary::encodeFromFile() Exception: " << e.what() << std::endl;
+    }
+    return bSuccess;
+}
+
+std::string find_data_dir()
+{
+    std::ifstream ifs;
+    std::string filename;
+    filename = "..\\..\\data\\test.bin";
+    if (touch_file(filename)) {
+        return std::string("..\\..\\data");
+    }
+    filename = "..\\..\\..\\data\\test.bin";
+    if (touch_file(filename)) {
+        return std::string("..\\..\\..\\data");
+    }
+    filename = "..\\..\\bin\\data\\test.bin";
+    if (touch_file(filename)) {
+        return std::string("..\\..\\bin\\data");
+    }
+    filename = "..\\..\\..\\bin\\data\\test.bin";
+    if (touch_file(filename)) {
+        return std::string("..\\..\\..\\bin\\data");
+    }
+    return std::string("");
+}
+
+std::string get_bin_file(const std::string & filename)
+{
+    std::string bin_file;
+    static std::string data_dir = find_data_dir();
+    if (!data_dir.empty()) {
+        bin_file = data_dir + "\\";
+        bin_file += filename;
+        return bin_file;
+    }
+    return filename;
+}
 
 std::streamsize memory_compare(const char * buf1, const char * buf2, std::size_t length)
 {
@@ -121,7 +174,7 @@ void test_simple_dom()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary<one_escape>::encodeFromFile(TEST_BIN_FILENAME, content, false);
+    json_binary<one_escape>::encodeFromFile(get_bin_file("test.bin"), content, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content.length());  
 
     // 3. Stringify the DOM
@@ -140,7 +193,7 @@ void test_serialize()
     std::vector<Employee> employees;
 
     Employee milo("Milo YIP", 34, true);
-    milo.EncodeFromFile(TEST_BIN_FILENAME, true);
+    milo.EncodeFromFile(get_bin_file("test.bin"), true);
     milo.SaveContentToFile("C:\\test_json_binary_out.bin");
 
     StringBuffer sb;
@@ -167,7 +220,7 @@ void test_simple_dom_hex()
     Value& bin = doc["binary-hex"];
     std::string content;
     std::size_t content_size = 0;
-    json_binary_hex::encodeFromFile(TEST_BIN_FILENAME, content, false);
+    json_binary_hex::encodeFromFile(get_bin_file("test.bin"), content, false);
     bin.SetString(content.c_str(), (rapidjson::SizeType)content.length());  
 
     // 3. Stringify the DOM
@@ -186,7 +239,7 @@ void test_serialize_hex()
     std::vector<Employee> employees;
 
     Employee milo("Milo YIP", 34, true);
-    milo.EncodeHexFromFile(TEST_BIN_FILENAME, true);
+    milo.EncodeHexFromFile(get_bin_file("test.bin"), true);
     milo.SaveContentToFile("C:\\test_json_binary_hex_out.bin");
 
     StringBuffer sb;
@@ -214,7 +267,7 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary_utils::readFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary_utils::readFromFile(get_bin_file("big.bin"), content)) {
             sw.stop();
             std::cout << std::endl;
             std::cout << "json_binary_utils::readFromFile():" << std::endl << std::endl;
@@ -240,7 +293,7 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary<one_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary<one_escape>::encodeFromFile(get_bin_file("big.bin"), content)) {
             sw.stop();
             std::cout << std::endl;
             std::cout << "json_binary<one_escape>::encodeFromFile():" << std::endl << std::endl;
@@ -264,7 +317,7 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary<twice_escape>::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary<twice_escape>::encodeFromFile(get_bin_file("big.bin"), content)) {
             sw.stop();
             std::cout << std::endl;
             std::cout << "json_binary<twice_escape>::encodeFromFile():" << std::endl << std::endl;
@@ -288,7 +341,7 @@ void json_binary_big_file_test()
         std::string content, source;
 
         sw.start();
-        if (json_binary_hex::encodeFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary_hex::encodeFromFile(get_bin_file("big.bin"), content)) {
             sw.stop();
             std::cout << std::endl;
             std::cout << "json_binary_hex::encodeFromFile():" << std::endl << std::endl;
@@ -368,7 +421,7 @@ void json_binary_big_file_test()
         std::string content;
 
         sw.start();
-        if (json_binary_hex::encodeStdFromFile(TEST_BIG_BIN_FILENAME, content)) {
+        if (json_binary_hex::encodeStdFromFile(get_bin_file("big.bin"), content)) {
             sw.stop();
             std::cout << std::endl;
             std::cout << "json_binary_hex::encodeStdFromFile():" << std::endl << std::endl;

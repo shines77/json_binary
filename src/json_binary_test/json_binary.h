@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <exception>
 
 #include "json_hex16.h"
 #include "bin_escape.h"
