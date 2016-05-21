@@ -2,6 +2,14 @@
 
 #include <chrono>
 
+#ifndef COMPILER_BARRIER
+#if defined(_MSC_VER) || defined(__INTEL_COMPILER)
+#define COMPILER_BARRIER()		_ReadWriteBarrier()
+#else
+#define COMPILER_BARRIER()		asm volatile ("" : : : "memory")
+#endif
+#endif
+
 using namespace std::chrono;
 
 class StopWatch {
@@ -13,23 +21,34 @@ private:
     time_clock start_time_;
     time_clock stop_time_;
     time_elapsed interval_time_;
+	double total_elapsed_time_;
 
 public:
-    StopWatch() {};
+    StopWatch() : total_elapsed_time_(0.0) {};
     ~StopWatch() {};
+
+	void reset() {
+		total_elapsed_time_ = 0.0;
+	}
 
     void start() {
         start_time_ = std::chrono::high_resolution_clock::now();
+		COMPILER_BARRIER();
     }
 
     void stop() {
+		COMPILER_BARRIER();
         stop_time_ = std::chrono::high_resolution_clock::now();
     }
+
+	void again() {
+		double elapsed_time = interval_time_.count();
+		total_elapsed_time_ += elapsed_time;
+	}
     
     double getElapsedTime() {
         interval_time_ = std::chrono::duration_cast< time_elapsed >(stop_time_ - start_time_);
-        double elapsed_time = interval_time_.count();
-        return elapsed_time;
+        return interval_time_.count();
     }
 
     double getMillisec() {
@@ -39,4 +58,14 @@ public:
     double getSecond() {
         return getElapsedTime();
     }
+
+    double getTotalMillisec() const {
+        return getTotalSecond() * 1000.0;
+    }
+
+    double getTotalSecond() const {
+        return total_elapsed_time_;
+    }
 };
+
+#undef COMPILER_BARRIRER
