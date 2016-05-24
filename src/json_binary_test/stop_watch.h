@@ -24,11 +24,13 @@ private:
 	double total_elapsed_time_;
 
 public:
-    StopWatch() : total_elapsed_time_(0.0) {};
+    StopWatch() : total_elapsed_time_(0.0), interval_time_{0} {};
     ~StopWatch() {};
 
 	void reset() {
 		total_elapsed_time_ = 0.0;
+        start_time_ = std::chrono::high_resolution_clock::now();
+        interval_time_ = std::chrono::duration_cast<time_elapsed>(start_time_ - start_time_);
 	}
 
     void start() {
@@ -42,7 +44,7 @@ public:
     }
 
 	void again() {
-		double elapsed_time = interval_time_.count();
+		double elapsed_time = getElapsedTime();
 		total_elapsed_time_ += elapsed_time;
 	}
     
