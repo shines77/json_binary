@@ -755,7 +755,8 @@ void big_file_test()
             sw.reset();
             for (int i = 0; i < kRepeatTimes; ++i) {
                 sw.start();
-                encoded = base64_encode(content.c_str(), (int)content.length());
+                //encoded = base64_encode(content.c_str(), (int)content.length());
+				std::ptrdiff_t encoded_size = base64_encode(content.c_str(), (int)content.length(), encoded);
                 sw.stop();
                 sw.again();
                 sum_encoded += encoded.length();
@@ -784,7 +785,8 @@ void big_file_test()
             sw.reset();
             for (int i = 0; i < kRepeatTimes; ++i) {
                 sw.start();
-                decoded = base64_decode(content);
+                //decoded = base64_decode(content);
+				std::ptrdiff_t decoded_size = base64_decode(content, decoded);
                 sw.stop();
                 sw.again();
                 sum_decoded += decoded.length();
