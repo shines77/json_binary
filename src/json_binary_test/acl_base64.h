@@ -3,10 +3,10 @@
 #include <malloc.h>
 #include <string.h>
 
-static const unsigned char to_b64_tab[] =
+static const unsigned char base64_enc_table[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static const unsigned char un_b64_tab[] = {
+static const unsigned char base64_dec_table[] = {
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 62,  255, 255, 255, 63,
@@ -25,9 +25,9 @@ static const unsigned char un_b64_tab[] = {
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0
 };
 
-unsigned char * acl_base64_encode(const char * in, int len)
+unsigned char * acl_base64_encode(const char * src, int len)
 {
-	const unsigned char * clear = (const unsigned char *)in;
+	const unsigned char * clear = (const unsigned char *)src;
 	unsigned char * code = NULL;
 	unsigned char * p;
 
@@ -38,37 +38,37 @@ unsigned char * acl_base64_encode(const char * in, int len)
 		register int x, y;
 
 		x = *clear++;
-		*p++ = to_b64_tab[(x >> 2) & 63];
+		*p++ = base64_enc_table[(x >> 2) & 63];
 
 		if (len-- <= 0) {
-			*p++ = to_b64_tab[(x << 4) & 63];
+			*p++ = base64_enc_table[(x << 4) & 63];
 			*p++ = '=';
 			*p++ = '=';
 			break;
 		}
 
 		y = *clear++;
-		*p++ = to_b64_tab[((x << 4) | ((y >> 4) & 15)) & 63];
+		*p++ = base64_enc_table[((x << 4) | ((y >> 4) & 15)) & 63];
 
 		if (len-- <= 0) {
-			*p++ = to_b64_tab[(y << 2) & 63];
+			*p++ = base64_enc_table[(y << 2) & 63];
 			*p++ = '=';
 			break;
 		}
 
 		x = *clear++;
-		*p++ = to_b64_tab[((y << 2) | ((x >> 6) & 3)) & 63];
+		*p++ = base64_enc_table[((y << 2) | ((x >> 6) & 3)) & 63];
 
-		*p++ = to_b64_tab[x & 63];
+		*p++ = base64_enc_table[x & 63];
 	}
 
 	*p = 0;
 	return (code);
 }
 
-int acl_base64_decode(const char * in, char ** pptr_in)
+int acl_base64_decode(const char * src, char ** pptr_in)
 {
-	const unsigned char * code = (const unsigned char *)in;
+	const unsigned char * code = (const unsigned char *)src;
 	unsigned char ** pptr = (unsigned char **) pptr_in;
 	register int x, y;
 	unsigned char * result, * result_saved = NULL;
@@ -87,9 +87,9 @@ int acl_base64_decode(const char * in, char ** pptr_in)
 	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
 	   quantum this may decode to 1, 2, or 3 output bytes. */
 	while ((x = (*code++)) != 0) {
-		if (x > 127 || (x = un_b64_tab[x]) == 255)
+		if (x > 127 || (x = base64_dec_table[x]) == 255)
 			ERETURN (-1);
-		if ((y = (*code++)) == 0 || (y = un_b64_tab[y]) == 255)
+		if ((y = (*code++)) == 0 || (y = base64_dec_table[y]) == 255)
 			ERETURN (-1);
 		*result++ = (x << 2) | (y >> 4);
 
@@ -97,14 +97,14 @@ int acl_base64_decode(const char * in, char ** pptr_in)
 			if (*code++ != '=' || *code != 0)
 				ERETURN (-1);
 		} else {
-			if (x > 127 || (x = un_b64_tab[x]) == 255)
+			if (x > 127 || (x = base64_dec_table[x]) == 255)
 				ERETURN (-1);
 			*result++ = (y << 4) | (x >> 2);
 			if ((y = (*code++)) == '=') {
 				if (*code != 0)
 					ERETURN (-1);
 			} else {
-				if (y > 127 || (y = un_b64_tab[y]) == 255)
+				if (y > 127 || (y = base64_dec_table[y]) == 255)
 					ERETURN (-1);
 				*result++ = (x << 6) | y;
 			}
@@ -115,9 +115,9 @@ int acl_base64_decode(const char * in, char ** pptr_in)
 	return (int) (result - *pptr);
 }
 
-static std::string base64_encode(const char * in, int len)
+static std::string base64_encode(const char * src, int len)
 {
-	const unsigned char * clear = (const unsigned char *)in;
+	const unsigned char * clear = (const unsigned char *)src;
 
 	std::string encoded;
 	encoded.resize(4 * ((len + 2) / 3) + 1);
@@ -128,30 +128,30 @@ static std::string base64_encode(const char * in, int len)
 		register int x, y;
 
 		x = *clear++;
-		*p++ = to_b64_tab[(x >> 2) & 63];
+		*p++ = base64_enc_table[(x >> 2) & 63];
 
 		if (len-- <= 0)
 		{
-			*p++ = to_b64_tab[(x << 4) & 63];
+			*p++ = base64_enc_table[(x << 4) & 63];
 			*p++ = '=';
 			*p++ = '=';
 			break;
 		}
 
 		y = *clear++;
-		*p++ = to_b64_tab[((x << 4) | ((y >> 4) & 15)) & 63];
+		*p++ = base64_enc_table[((x << 4) | ((y >> 4) & 15)) & 63];
 
 		if (len-- <= 0)
 		{
-			*p++ = to_b64_tab[(y << 2) & 63];
+			*p++ = base64_enc_table[(y << 2) & 63];
 			*p++ = '=';
 			break;
 		}
 
 		x = *clear++;
-		*p++ = to_b64_tab[((y << 2) | ((x >> 6) & 3)) & 63];
+		*p++ = base64_enc_table[((y << 2) | ((x >> 6) & 3)) & 63];
 
-		*p++ = to_b64_tab[x & 63];
+		*p++ = base64_enc_table[x & 63];
 	}
 
 	//*p = '\0';
@@ -160,9 +160,9 @@ static std::string base64_encode(const char * in, int len)
 	return encoded;
 }
 
-static std::ptrdiff_t base64_encode(const char * in, int len, std::string & encoded)
+static std::ptrdiff_t base64_encode(const char * src, int len, std::string & encoded)
 {
-	const unsigned char * clear = (const unsigned char *)in;
+	const unsigned char * clear = (const unsigned char *)src;
 
 	encoded.resize(4 * ((len + 2) / 3) + 1);
 	auto p = &encoded[0];
@@ -172,30 +172,30 @@ static std::ptrdiff_t base64_encode(const char * in, int len, std::string & enco
 		register int x, y;
 
 		x = *clear++;
-		*p++ = to_b64_tab[(x >> 2) & 63];
+		*p++ = base64_enc_table[(x >> 2) & 63];
 
 		if (len-- <= 0)
 		{
-			*p++ = to_b64_tab[(x << 4) & 63];
+			*p++ = base64_enc_table[(x << 4) & 63];
 			*p++ = '=';
 			*p++ = '=';
 			break;
 		}
 
 		y = *clear++;
-		*p++ = to_b64_tab[((x << 4) | ((y >> 4) & 15)) & 63];
+		*p++ = base64_enc_table[((x << 4) | ((y >> 4) & 15)) & 63];
 
 		if (len-- <= 0)
 		{
-			*p++ = to_b64_tab[(y << 2) & 63];
+			*p++ = base64_enc_table[(y << 2) & 63];
 			*p++ = '=';
 			break;
 		}
 
 		x = *clear++;
-		*p++ = to_b64_tab[((y << 2) | ((x >> 6) & 3)) & 63];
+		*p++ = base64_enc_table[((y << 2) | ((x >> 6) & 3)) & 63];
 
-		*p++ = to_b64_tab[x & 63];
+		*p++ = base64_enc_table[x & 63];
 	}
 
 	std::ptrdiff_t encoded_size = p - &encoded[0];
@@ -204,22 +204,22 @@ static std::ptrdiff_t base64_encode(const char * in, int len, std::string & enco
 	return encoded_size;
 }
 
-static std::string base64_decode(const std::string & in)
+static std::string base64_decode(const std::string & src)
 {
 	std::string decoded;
-	decoded.resize(3 * (in.size() / 4) + 1);
+	decoded.resize(3 * (src.size() / 4) + 1);
 	auto p = &decoded[0];
 
 	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
 	   quantum this may decode to 1, 2, or 3 output bytes. */
 
-	auto it = in.cbegin();
+	auto it = src.cbegin();
 	register int x, y;
 	while ((x = (*it++)) != 0)
 	{
-		if (x > 127 || (x = un_b64_tab[x]) == 255)
+		if (x > 127 || (x = base64_dec_table[x]) == 255)
 			return {};
-		if ((y = (*it++)) == 0 || (y = un_b64_tab[y]) == 255)
+		if ((y = (*it++)) == 0 || (y = base64_dec_table[y]) == 255)
 			return {};
 		*p++ = (x << 2) | (y >> 4);
 
@@ -230,7 +230,7 @@ static std::string base64_decode(const std::string & in)
 		}
 		else
 		{
-			if (x > 127 || (x = un_b64_tab[x]) == 255)
+			if (x > 127 || (x = base64_dec_table[x]) == 255)
 				return {};
 			*p++ = (y << 4) | (x >> 2);
 			if ((y = (*it++)) == '=') {
@@ -239,7 +239,7 @@ static std::string base64_decode(const std::string & in)
 			}
 			else
 			{
-				if (y > 127 || (y = un_b64_tab[y]) == 255)
+				if (y > 127 || (y = base64_dec_table[y]) == 255)
 					return {};
 				*p++ = (x << 6) | y;
 			}
@@ -250,21 +250,21 @@ static std::string base64_decode(const std::string & in)
 	return decoded;
 }
 
-static std::ptrdiff_t base64_decode(const std::string & in, std::string & decoded)
+static std::ptrdiff_t base64_decode(const std::string & src, std::string & decoded)
 {
-	decoded.resize(3 * (in.size() / 4) + 1);
+	decoded.resize(3 * (src.size() / 4) + 1);
 	auto p = &decoded[0];
 
 	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
 	   quantum this may decode to 1, 2, or 3 output bytes. */
 
-	auto it = in.cbegin();
+	auto it = src.cbegin();
 	register int x, y;
 	while ((x = (*it++)) != 0)
 	{
-		if (x > 127 || (x = un_b64_tab[x]) == 255)
+		if (x > 127 || (x = base64_dec_table[x]) == 255)
 			goto err_exit;
-		if ((y = (*it++)) == 0 || (y = un_b64_tab[y]) == 255)
+		if ((y = (*it++)) == 0 || (y = base64_dec_table[y]) == 255)
 			goto err_exit;
 		*p++ = (x << 2) | (y >> 4);
 
@@ -275,7 +275,7 @@ static std::ptrdiff_t base64_decode(const std::string & in, std::string & decode
 		}
 		else
 		{
-			if (x > 127 || (x = un_b64_tab[x]) == 255)
+			if (x > 127 || (x = base64_dec_table[x]) == 255)
 				return -1;
 			*p++ = (y << 4) | (x >> 2);
 			if ((y = (*it++)) == '=') {
@@ -284,7 +284,7 @@ static std::ptrdiff_t base64_decode(const std::string & in, std::string & decode
 			}
 			else
 			{
-				if (y > 127 || (y = un_b64_tab[y]) == 255)
+				if (y > 127 || (y = base64_dec_table[y]) == 255)
 					return -1;
 				*p++ = (x << 6) | y;
 			}
@@ -292,6 +292,123 @@ static std::ptrdiff_t base64_decode(const std::string & in, std::string & decode
 	}
 
 	std::ptrdiff_t decoded_size = p - &decoded[0];
+	decoded.resize(decoded_size);
+	return decoded_size;
+err_exit:
+	decoded.clear();
+	return -1;
+}
+
+static std::ptrdiff_t base64_encode_new(const char * src, std::size_t len, std::string & encoded)
+{
+	std::size_t alloc_size = ((len + 2) / 3) * 4 + 1;
+	encoded.resize(alloc_size);
+
+    const unsigned char * cur = (const unsigned char *)src;
+	unsigned char * dest = (unsigned char *)&encoded[0];
+
+	// Get the length of the integer multiple of 3 is obtained.
+	std::size_t multiply3_len = (len / 3) * 3;
+	// The remain bytes of src length.
+	std::size_t remain_len = len - multiply3_len;
+	// Gte the repeat times in loop
+	std::size_t repeat_cnt = (len / 3);
+
+	while (repeat_cnt > 0) {
+		register unsigned int a, b, c;
+		unsigned int x, y, z, l;
+
+		a = (unsigned int)(*(cur + 0));
+		b = (unsigned int)(*(cur + 1));
+		c = (unsigned int)(*(cur + 2));
+        x = (a >> 2);
+        y = ((a << 4) & 0x30) | (b >> 4);
+        z = ((b << 2) & 0x3C) | (c >> 6);
+        l = (c & 0x3F);
+		*(dest + 0) = base64_enc_table[x];
+		*(dest + 1) = base64_enc_table[y];
+		*(dest + 2) = base64_enc_table[z];
+        *(dest + 3) = base64_enc_table[l];
+		cur += 3;
+        dest += 4;
+		repeat_cnt--;
+	}
+
+    if (remain_len == 1) {
+        register unsigned int a;
+		a = (unsigned int)(*(cur + 0));
+        *dest++ = base64_enc_table[(a >> 2)];
+        *dest++ = base64_enc_table[(a << 4) & 0x3F];
+        *dest++ = '=';
+        *dest++ = '=';
+    }
+    else if (remain_len == 2) {
+        register unsigned int a, b;
+        a = (unsigned int)(*(cur + 0));
+        b = (unsigned int)(*(cur + 1));
+        *dest++ = base64_enc_table[(a >> 2)];
+        *dest++ = base64_enc_table[((a << 4) & 0x30) | (b >> 4)];
+        *dest++ = base64_enc_table[(b << 2) & 0x3C];
+        *dest++ = '=';
+    }
+
+	std::ptrdiff_t encoded_size = dest - (unsigned char *)&encoded[0];
+    encoded.resize(encoded_size);
+    encoded += '\0';
+	return encoded_size;
+}
+
+static std::ptrdiff_t base64_decode_new(const std::string & src, std::string & decoded)
+{
+	std::size_t alloc_size = 3 * ((src.size() + 3) / 4);
+	decoded.resize(alloc_size);
+
+    const unsigned char * cur = (const unsigned char *)&src[0];
+	unsigned char * dest = (unsigned char *)&decoded[0];
+
+	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
+	   quantum this may decode to 1, 2, or 3 output bytes. */
+
+	// Get the length of the integer multiple of 4 is obtained.
+	std::size_t multiply4_len = src.length() & (~(std::size_t)(4 - 1));
+	// The remain bytes of src length.
+	std::size_t remain_len = src.length() - multiply4_len;
+	// Gte the repeat times in loop
+	std::size_t repeat_cnt = src.length() >> 2;
+
+	register int x, y;
+	while ((x = (*cur++)) != 0) {
+		if (x > 127 || (x = base64_dec_table[x]) == 255)
+			goto err_exit;
+		if ((y = (*cur++)) == 0 || (y = base64_dec_table[y]) == 255)
+			goto err_exit;
+		*dest++ = (x << 2) | (y >> 4);
+
+		if ((x = (*cur++)) == '=')
+		{
+			if (*cur++ != '=' || *cur != 0)
+				goto err_exit;
+		}
+		else
+		{
+			if (x > 127 || (x = base64_dec_table[x]) == 255)
+				return -1;
+			*dest++ = (y << 4) | (x >> 2);
+			if ((y = (*cur++)) == '=') {
+				if (*cur != 0)
+					goto err_exit;
+			}
+			else
+			{
+				if (y > 127 || (y = base64_dec_table[y]) == 255)
+					return -1;
+				*dest++ = (x << 6) | y;
+			}
+		}
+	}
+
+	std::ptrdiff_t decoded_size = dest - (unsigned char *)&decoded[0];
+	assert(decoded_size <= alloc_size);
 	decoded.resize(decoded_size);
 	return decoded_size;
 err_exit:

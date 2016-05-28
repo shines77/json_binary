@@ -816,6 +816,77 @@ void big_file_test()
 #endif
 
     //
+    // base64_new for C++
+    //
+    {
+        std::string content = original;
+
+        {
+            StopWatch sw;
+            std::string encoded;
+            std::size_t sum_encoded = 0;
+        
+            sw.reset();
+            for (int i = 0; i < kRepeatTimes; ++i) {
+                sw.start();
+				std::ptrdiff_t encoded_size = base64_encode_new(content.c_str(), (int)content.length(), encoded);
+                sw.stop();
+                sw.again();
+                sum_encoded += encoded.length();
+            }
+
+            if (encoded.length() > 0) {
+                std::cout << std::endl;
+                std::cout << "base64_encode_new(): " << (sum_encoded % 16) << std::endl;
+                std::cout << std::endl;
+                std::cout << "encode_size = " << encoded.length() << std::endl;
+                content.swap(encoded);
+            }
+            else {
+                std::cout << "base64_encode_new(): failure." << std::endl;
+            }
+            std::cout << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << std::endl;
+        }
+
+        {
+            StopWatch sw;
+            std::string decoded;
+            std::size_t sum_decoded = 0;
+        
+            sw.reset();
+            for (int i = 0; i < kRepeatTimes; ++i) {
+                sw.start();
+				std::ptrdiff_t decoded_size = base64_decode_new(content, decoded);
+                sw.stop();
+                sw.again();
+                sum_decoded += decoded.length();
+            }
+
+            if (decoded.length() > 0) {
+                std::cout << "base64_decode_new((): " << (sum_decoded % 16) << std::endl;
+                std::cout << std::endl;
+                std::cout << "decode_size = " << decoded.length() << std::endl;
+            }
+            else {
+                std::cout << "base64_decode_new((): failure." << std::endl;
+            }
+            std::cout << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << std::endl;
+
+            if (std::memcmp(decoded.c_str(), original.c_str(), original.length()) == 0)
+                std::cout << "decode() correctly." << std::endl;
+            else
+                std::cout << "decode() error." << std::endl;
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "--------------------------------------------" << std::endl;
+
+    //
     // hex16_encode() && hex16_decode()
     //
     {
