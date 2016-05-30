@@ -934,7 +934,7 @@ void big_file_test()
             sw.reset();
             for (int i = 0; i < kRepeatTimes; ++i) {
                 sw.start();
-				std::ptrdiff_t decoded_size = base64_decode_new(content, decoded);
+				std::ptrdiff_t decoded_size = base64_decode_new2(content, decoded);
                 sw.stop();
                 sw.again();
                 sum_decoded += decoded.length();
