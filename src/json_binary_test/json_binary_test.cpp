@@ -707,6 +707,82 @@ void json_binary_big_file_test()
     std::cout << "--------------------------------------------" << std::endl;
 }
 
+static std::ptrdiff_t base64_decode_new2(const std::string & src, std::string & decoded)
+{
+	std::size_t alloc_size = ((src.length() + 3) / 4) * 3;
+	decoded.resize(alloc_size);
+
+	// Get the length of the integer multiple of 4 is obtained.
+	std::size_t multiply4_len = src.length() & (~(std::size_t)(4 - 1));
+	// The remain bytes of src length.
+	std::size_t remain_len = src.length() - multiply4_len;
+
+    const unsigned char * cur = (const unsigned char *)&src[0];
+    const unsigned char * end = cur + multiply4_len;
+	unsigned char * dest = (unsigned char *)&decoded[0];
+
+    while (cur < end) {
+        register unsigned char a, b, c, d;
+        uint32_t value;
+        a  = base64_dec_table[*(cur + 0)];
+        b  = base64_dec_table[*(cur + 1)];
+        c  = base64_dec_table[*(cur + 2)];
+        d  = base64_dec_table[*(cur + 3)];
+        value = (d << 24) | (c << 16) | (b << 8) | a;
+        if ((value & 0x80808080UL) != 0) {
+            // Found '\0', '=' or another chars
+            break;
+        }
+        *(dest + 0) = (a << 2) | ((b & 0x30) >> 4);
+        *(dest + 1) = (b << 4) | ((c & 0x3C) >> 2);
+        *(dest + 2) = ((c & 0x03) << 6) | (d & 0x3F);
+        cur += 4;
+        dest += 3;
+    }
+
+	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
+	   quantum this may decode to 1, 2, or 3 output bytes. */
+
+	int x, y;
+	while ((x = (*cur++)) != 0) {
+		if (x > 127 || (x = base64_dec_table[x]) == 255)
+			goto err_exit;
+		if ((y = (*cur++)) == 0 || (y = base64_dec_table[y]) == 255)
+			goto err_exit;
+		*dest++ = (x << 2) | (y >> 4);
+
+		if ((x = (*cur++)) == '=')
+		{
+			if (*cur++ != '=' || *cur != 0)
+				goto err_exit;
+		}
+		else
+		{
+			if (x > 127 || (x = base64_dec_table[x]) == 255)
+				return -1;
+			*dest++ = (y << 4) | (x >> 2);
+			if ((y = (*cur++)) == '=') {
+				if (*cur != 0)
+					goto err_exit;
+			}
+			else
+			{
+				if (y > 127 || (y = base64_dec_table[y]) == 255)
+					return -1;
+				*dest++ = (x << 6) | y;
+			}
+		}
+	}
+
+	std::ptrdiff_t decoded_size = dest - (unsigned char *)&decoded[0];
+	assert(decoded_size <= alloc_size);
+	decoded.resize(decoded_size);
+	return decoded_size;
+err_exit:
+	decoded.clear();
+	return -1;
+}
+
 void big_file_test()
 {
     std::string original;
@@ -870,7 +946,7 @@ void big_file_test()
                 std::cout << "decode_size = " << decoded.length() << std::endl;
             }
             else {
-                std::cout << "base64_decode_new((): failure." << std::endl;
+                std::cout << "base64_decode_new(): failure." << std::endl;
             }
             std::cout << std::endl;
             std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
