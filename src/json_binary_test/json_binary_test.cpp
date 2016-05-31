@@ -723,7 +723,7 @@ static std::ptrdiff_t base64_decode_new2(const std::string & src, std::string & 
 
     while (cur < end) {
         register unsigned char a, b, c, d;
-        uint32_t value;
+        register uint32_t value;
         a  = base64_dec_table[*(cur + 0)];
         b  = base64_dec_table[*(cur + 1)];
         c  = base64_dec_table[*(cur + 2)];
@@ -849,7 +849,8 @@ void big_file_test()
                 std::cout << "base64_encode(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
         }
 
@@ -877,7 +878,8 @@ void big_file_test()
                 std::cout << "base64_decode(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
 
             if (std::memcmp(decoded.c_str(), original.c_str(), original.length()) == 0)
@@ -922,7 +924,8 @@ void big_file_test()
                 std::cout << "base64_encode_new(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
         }
 
@@ -949,7 +952,8 @@ void big_file_test()
                 std::cout << "base64_decode_new(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
 
             if (std::memcmp(decoded.c_str(), original.c_str(), original.length()) == 0)
@@ -994,7 +998,8 @@ void big_file_test()
                 std::cout << "hex16_encode(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
         }
 
@@ -1022,7 +1027,8 @@ void big_file_test()
                 std::cout << "hex16_decode(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
 
             if (std::memcmp(decoded.c_str(), original.c_str(), original.length()) == 0)
@@ -1067,7 +1073,8 @@ void big_file_test()
                 std::cout << "bin_escape_encode(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
         }
 
@@ -1095,7 +1102,8 @@ void big_file_test()
                 std::cout << "bin_escape_decode(): failure." << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms." << std::endl;
+            std::cout << "avg. time spent: " << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << (((double)content.length() / 1024.0 / 1024.0) * kRepeatTimes / sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
 
             if (std::memcmp(decoded.c_str(), original.c_str(), original.length()) == 0)

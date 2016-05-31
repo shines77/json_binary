@@ -318,7 +318,6 @@ static std::ptrdiff_t base64_encode_new(const char * src, std::size_t len, std::
 	while (cur < end) {
 		register unsigned int a, b, c;
 		unsigned int x, y, z, l;
-
 		a = (unsigned int)(*(cur + 0));
 		b = (unsigned int)(*(cur + 1));
 		c = (unsigned int)(*(cur + 2));
