@@ -315,23 +315,58 @@ static std::ptrdiff_t base64_encode_new(const char * src, std::size_t len, std::
     const unsigned char * end = cur + multiply3_len;
 	unsigned char * dest = (unsigned char *)&encoded[0];
 
+#if defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_IA64) || defined(__amd64__) || defined(__x86_64__)
 	while (cur < end) {
 		register unsigned int a, b, c;
-		unsigned int x, y, z, l;
 		a = (unsigned int)(*(cur + 0));
 		b = (unsigned int)(*(cur + 1));
 		c = (unsigned int)(*(cur + 2));
-        x = (a >> 2);
-        y = ((a << 4) & 0x30) | (b >> 4);
-        z = ((b << 2) & 0x3C) | (c >> 6);
-        l = (c & 0x3F);
-		*(dest + 0) = base64_enc_chars[x];
-		*(dest + 1) = base64_enc_chars[y];
-		*(dest + 2) = base64_enc_chars[z];
-        *(dest + 3) = base64_enc_chars[l];
+		*(dest + 0) = base64_enc_chars[(a >> 2)];
+		*(dest + 1) = base64_enc_chars[((a << 4) & 0x30) | (b >> 4)];
+		*(dest + 2) = base64_enc_chars[((b << 2) & 0x3C) | (c >> 6)];
+        *(dest + 3) = base64_enc_chars[(c & 0x3F)];
         dest += 4;
 		cur += 3;
 	}
+#else
+  #if 0
+    if (((std::uint32_t)(std::size_t)(dest) & 0x03U) == 0) {
+        // The src address is align to 4 bytes.
+        uint32_t * dest32 = (uint32_t *)dest;
+	    while (cur < end) {
+		    register unsigned int a, b, c;
+		    unsigned int x, y, z, l;
+		    a = (unsigned int)(*(cur + 0));
+		    b = (unsigned int)(*(cur + 1));
+		    c = (unsigned int)(*(cur + 2));
+            x = (a >> 2);
+            y = ((a << 4) & 0x30) | (b >> 4);
+            z = ((b << 2) & 0x3C) | (c >> 6);
+            l = (c & 0x3F);
+            *dest32++ = ((unsigned int)(base64_enc_chars[l]) << 24) | ((unsigned int)(base64_enc_chars[z]) << 16)
+                      | ((unsigned int)(base64_enc_chars[y]) <<  8) | (unsigned int)(base64_enc_chars[x]);
+		    cur += 3;
+	    }
+        dest = (unsigned char *)dest32;
+    }
+    else
+  #endif
+    {
+        // The src address is not align to 4 bytes.
+	    while (cur < end) {
+		    register unsigned int a, b, c;
+		    a = (unsigned int)(*(cur + 0));
+		    b = (unsigned int)(*(cur + 1));
+		    c = (unsigned int)(*(cur + 2));
+		    *(dest + 0) = base64_enc_chars[(a >> 2)];
+		    *(dest + 1) = base64_enc_chars[((a << 4) & 0x30) | (b >> 4)];
+		    *(dest + 2) = base64_enc_chars[((b << 2) & 0x3C) | (c >> 6)];
+            *(dest + 3) = base64_enc_chars[(c & 0x3F)];
+            dest += 4;
+		    cur += 3;
+	    }
+    }
+#endif
 
     if (remain_len == 1) {
         register unsigned int a;
@@ -366,40 +401,55 @@ static std::ptrdiff_t base64_decode_new(const std::string & src, std::string & d
 	std::size_t multiply4_len = src.length() & (~(std::size_t)(4 - 1));
 	// The remain bytes of src length.
 	std::size_t remain_len = src.length() - multiply4_len;
-	// Get the repeat times in loop
-	std::size_t repeat_cnt = src.length() >> 2;
 
     const unsigned char * cur = (const unsigned char *)&src[0];
     const unsigned char * end = cur + multiply4_len;
 	unsigned char * dest = (unsigned char *)&decoded[0];
 
+#if defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_IA64) || defined(__amd64__) || defined(__x86_64__)
+    while (cur < end) {
+        register unsigned char a, b, c, d;
+        register uint32_t value;
+        a  = base64_dec_table[*(cur + 0)];
+        b  = base64_dec_table[*(cur + 1)];
+        c  = base64_dec_table[*(cur + 2)];
+        d  = base64_dec_table[*(cur + 3)];
+        value = (d << 24) | (c << 16) | (b << 8) | a;
+        if ((value & 0x80808080UL) != 0) {
+            // Found '\0', '=' or another chars
+            break;
+        }
+        *(dest + 0) = (a << 2) | ((b & 0x30) >> 4);
+        *(dest + 1) = (b << 4) | ((c & 0x3C) >> 2);
+        *(dest + 2) = ((c & 0x03) << 6) | (d & 0x3F);
+        cur += 4;
+        dest += 3;
+    }
+#else
+    while (cur < end) {
+        register uint32_t a, b, c, d;
+        uint32_t value;
+        a  = base64_dec_table[*(cur + 0)];
+        b  = base64_dec_table[*(cur + 1)];
+        c  = base64_dec_table[*(cur + 2)];
+        d  = base64_dec_table[*(cur + 3)];
+        value = (d << 24) | (c << 16) | (b << 8) | a;
+        *(dest + 0) = (a << 2) | ((b & 0x30) >> 4);
+        *(dest + 1) = (b << 4) | ((c & 0x3C) >> 2);
+        *(dest + 2) = ((c & 0x03) << 6) | (d & 0x3F);
+        if ((value & 0x80808080UL) != 0) {
+            // Found '\0', '=' or another chars
+            break;
+        }
+        cur += 4;
+        dest += 3;
+    }
+#endif
+
 	/* Each cycle of the loop handles a quantum of 4 input bytes. For the last
 	   quantum this may decode to 1, 2, or 3 output bytes. */
 
-    if (((std::uint32_t)(cur) & 0x03U) == 0) {
-        // The src address is align to 4 bytes.
-        const uint32_t * cur4 = (const uint32_t *)&src[0];
-        const uint32_t * end4 = cur4 + (multiply4_len >> 2);
-        while (cur4 < end4) {
-            uint32_t value = *cur4;
-            uint32_t value1, value2;
-            // If the one of char is > 127 in the four bytes.
-            if ((value & 0xC0C0C0C0UL) != 0) {
-                cur = (const unsigned char *)cur4;
-                break;
-            }
-            value &= 0x3F3F3F3FUL;
-
-            value1 = value2 = value;
-            cur4++;
-        }
-    }
-    else {
-        // The src address is not align to 4 bytes.
-        //
-    }
-
-	register int x, y;
+	int x, y;
 	while ((x = (*cur++)) != 0) {
 		if (x > 127 || (x = base64_dec_table[x]) == 255)
 			goto err_exit;

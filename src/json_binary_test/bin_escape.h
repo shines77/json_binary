@@ -121,14 +121,14 @@ static std::size_t bin_escape_encode_twice(const char * data, std::size_t data_l
     return (dest - dest_start);
 }
 
-static std::streamsize bin_escape_encode(const char * src, std::size_t src_len, std::string & dest,
+static std::ptrdiff_t bin_escape_encode(const char * src, std::size_t src_len, std::string & dest,
     bool fill_null = true, bool is_twice_escape = false, bool add_quote = false) {
     std::size_t alloc_size = bin_escape_get_encode_capacity(src_len, is_twice_escape, add_quote);
     dest.resize(alloc_size);
     char * buffer = &dest[0];
     if (add_quote)
         *buffer++ = '\"';
-    std::streamsize encode_size;
+    std::ptrdiff_t encode_size;
     if (!is_twice_escape)
         encode_size = bin_escape_encode(src, src_len, buffer, dest.capacity(), fill_null);
     else
@@ -159,7 +159,7 @@ static std::string bin_escape_encode(const char * src, std::size_t src_len,
     char * buffer = &dest[0];
     if (add_quote)
         *buffer++ = '\"';
-    std::streamsize encode_size;
+    std::ptrdiff_t encode_size;
     if (!is_twice_escape)
         encode_size = bin_escape_encode(src, src_len, buffer, dest.capacity(), fill_null);
     else
@@ -295,12 +295,12 @@ static std::size_t bin_escape_decode_twice(const char * data, std::size_t data_l
     return (dest - dest_start);
 }
 
-static std::streamsize bin_escape_decode(const std::string & src, std::string & dest,
+static std::ptrdiff_t bin_escape_decode(const std::string & src, std::string & dest,
     bool fill_null = true, bool is_twice_escape = false, bool skip_quote = false) {
     std::size_t alloc_size = bin_escape_get_decode_capacity(src.length());
     dest.resize(alloc_size);
     char * buffer = &dest[0];
-    std::streamsize decode_size;
+    std::ptrdiff_t decode_size;
     if (!is_twice_escape)
         decode_size = bin_escape_decode(src.c_str(), src.length(), buffer, dest.capacity(), fill_null, skip_quote);
     else
@@ -318,7 +318,7 @@ static std::string bin_escape_decode(const std::string & src, bool fill_null = t
     std::size_t alloc_size = bin_escape_get_decode_capacity(src.length());
     dest.resize(alloc_size);
     char * buffer = &dest[0];
-    std::streamsize decode_size;
+    std::ptrdiff_t decode_size;
     if (!is_twice_escape)
         decode_size = bin_escape_decode(src.c_str(), src.length(), buffer, dest.capacity(), fill_null, skip_quote);
     else

@@ -127,7 +127,7 @@ std::size_t hex16_get_decode_capacity(std::size_t data_length) {
 }
 
 // encode to upper HEX strings, like "AABBCCF0E5D9".
-static std::streamsize hex16_encode(const char * src, std::size_t src_len, char * buffer,
+static std::ptrdiff_t hex16_encode(const char * src, std::size_t src_len, char * buffer,
     std::size_t buf_size, bool fill_null = true) {
     assert(src != nullptr);
     assert(buffer != nullptr);
@@ -166,11 +166,11 @@ static std::streamsize hex16_encode(const char * src, std::size_t src_len, char 
     return (dest - buffer);
 }
 
-static std::streamsize hex16_encode(const char * src, std::size_t src_len, std::string & dest, bool fill_null = true) {
+static std::ptrdiff_t hex16_encode(const char * src, std::size_t src_len, std::string & dest, bool fill_null = true) {
     std::size_t alloc_size = hex16_get_encode_capacity(src_len);
     dest.resize(alloc_size);
     char * buffer = &dest[0];
-    std::streamsize encode_size = hex16_encode(src, src_len, buffer, dest.capacity(), fill_null);
+    std::ptrdiff_t encode_size = hex16_encode(src, src_len, buffer, dest.capacity(), fill_null);
     if (encode_size >= 0)
         dest.resize(encode_size);
     else
@@ -183,7 +183,7 @@ static std::string hex16_encode(const char * src, std::size_t src_len, bool fill
     std::size_t alloc_size = hex16_get_encode_capacity(src_len);
     dest.resize(alloc_size);
     char * buffer = &dest[0];
-    std::streamsize encode_size = hex16_encode(src, src_len, buffer, dest.capacity(), fill_null);
+    std::ptrdiff_t encode_size = hex16_encode(src, src_len, buffer, dest.capacity(), fill_null);
     if (encode_size >= 0)
         dest.resize(encode_size);
     else
@@ -191,7 +191,7 @@ static std::string hex16_encode(const char * src, std::size_t src_len, bool fill
     return dest;
 }
 
-static std::streamsize hex16_decode(const char * src, std::size_t src_len, char * buffer, std::size_t buf_size) {
+static std::ptrdiff_t hex16_decode(const char * src, std::size_t src_len, char * buffer, std::size_t buf_size) {
     assert(src != nullptr);
     assert(buffer != nullptr);
     // src_len must be multiply of 2.
@@ -227,11 +227,11 @@ static std::streamsize hex16_decode(const char * src, std::size_t src_len, char 
     return (dest - buffer);
 }
 
-static std::streamsize hex16_decode(const std::string & src, std::string & dest) {
+static std::ptrdiff_t hex16_decode(const std::string & src, std::string & dest) {
     std::size_t alloc_size = hex16_get_decode_capacity(src.length());
     dest.resize(alloc_size);
     char * buffer = &dest[0];
-    std::streamsize decode_size = hex16_decode(src.c_str(), src.length(), buffer, dest.capacity());
+    std::ptrdiff_t decode_size = hex16_decode(src.c_str(), src.length(), buffer, dest.capacity());
     if (decode_size >= 0)
         dest.resize(decode_size);
     else
@@ -244,7 +244,7 @@ static std::string hex16_decode(const std::string & src) {
     std::size_t alloc_size = hex16_get_decode_capacity(src.length());
     dest.resize(alloc_size);
     char * buffer = &dest[0];
-    std::streamsize decode_size = hex16_decode(src.c_str(), src.length(), buffer, dest.capacity());
+    std::ptrdiff_t decode_size = hex16_decode(src.c_str(), src.length(), buffer, dest.capacity());
     if (decode_size >= 0)
         dest.resize(decode_size);
     else
