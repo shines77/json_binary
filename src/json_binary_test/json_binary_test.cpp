@@ -18,6 +18,7 @@
 
 #include "json_binary.h"
 #include "acl_base64.h"
+#include "base64_fast.h"
 #include "stop_watch.h"
 #include "hex_table_256.h"
 
@@ -899,6 +900,107 @@ void big_file_test()
             else
                 std::cout << "decode() error." << std::endl;
             std::cout << std::endl;
+        }
+    }
+
+    std::cout << "--------------------------------------------" << std::endl;
+
+    //
+    // base64_fast for C
+    //
+    {
+        std::string content = original;
+
+        {
+            StopWatch sw;
+            std::string encoded;
+            std::size_t sum_encoded = 0;
+            std::ptrdiff_t encoded_size;
+
+            size_t dest_len = (content.length() + 2) / 3 * 4 + 1;
+            char * dest = (char *)malloc(dest_len * sizeof(char));
+
+            sw.reset();
+            for (int i = 0; i < kRepeatTimes; ++i) {
+                sw.start();
+				encoded_size = tm_base64_encode_fast(content.c_str(), (int)content.length(), dest, dest_len);
+                sw.stop();
+                sw.again();
+                sum_encoded += encoded_size;
+            }
+
+            if (encoded_size)
+                dest[encoded_size] = '\0';
+            encoded = dest;
+            encoded.resize(encoded_size + 1);
+            if (encoded.length() > 0) {
+                std::cout << std::endl;
+                std::cout << "base64_encode_fast(): " << (sum_encoded % 16) << ", encode_size = " << encoded.length();
+                std::cout << ", [+";
+                std::cout << std::left << std::setw(5) << std::setiosflags(std::ios::fixed) << std::setprecision(1);
+                std::cout << calc_percent(encoded.length(), content.length());
+                std::cout << "%]" << std::endl;
+                content.swap(encoded);
+            }
+            else {
+                std::cout << "base64_encode_fast(): failure." << std::endl;
+            }
+            std::cout << std::endl;
+            std::cout << "avg. time spent: " << std::setprecision(3) << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << std::setprecision(3) << calc_throughput(content.length(), sw.getTotalSecond()) << " MB/s" << std::endl;
+            std::cout << std::endl;
+
+            if (dest)
+                free(dest);
+        }
+
+        {
+            StopWatch sw;
+            std::string decoded;
+            std::size_t sum_decoded = 0;
+            std::ptrdiff_t decoded_size;
+
+            size_t dest_len = (content.length() + 3) / 4 * 3 + 1;
+            char * dest = (char *)malloc(dest_len * sizeof(char));
+
+            sw.reset();
+            for (int i = 0; i < kRepeatTimes; ++i) {
+                sw.start();
+				decoded_size = tm_base64_decode_fast(content.c_str(), content.length(), dest, dest_len);
+                sw.stop();
+                sw.again();
+                sum_decoded += decoded_size;
+            }
+
+            if (decoded_size)
+                dest[decoded_size] = '\0';
+            decoded.resize(decoded_size);
+            char * out = (char *)&decoded[0];
+            char * in = dest;
+            for (int i = 0; i < decoded_size; ++i) {
+                *out++ = *in++;
+            }
+            decoded.resize(decoded_size);
+            if (decoded.length() > 0) {
+                std::cout << "base64_decode_fast(): " << (sum_decoded % 16) << ", decode_size = " << decoded.length() << std::endl;
+            }
+            else {
+                std::cout << "base64_decode_fast(): failure." << std::endl;
+            }
+            std::cout << std::endl;
+            std::cout << "avg. time spent: " << std::setprecision(3) << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
+            std::cout << "throughput: " << std::setprecision(3) << calc_throughput(content.length(), sw.getTotalSecond()) << " MB/s" << std::endl;
+            std::cout << std::endl;
+
+            std::streamsize result = memory_compare(decoded.c_str(), original.c_str(), original.length());
+            if ((result == 0) && (std::memcmp(decoded.c_str(), original.c_str(), original.length()) == 0))
+                std::cout << "decode() correctly." << std::endl;
+            else
+                std::cout << "decode() error." << std::endl;
+            std::cout << std::endl;
+
+            if (dest)
+                free(dest);
         }
     }
 

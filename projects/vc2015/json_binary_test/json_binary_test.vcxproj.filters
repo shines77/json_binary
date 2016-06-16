@@ -14,6 +14,9 @@
     <ClCompile Include="..\..\..\src\json_binary_test\json_binary_test.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\json_binary_test\base64_fast.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\json_binary_test\json_binary.h">
@@ -34,5 +37,16 @@
     <ClInclude Include="..\..\..\src\json_binary_test\bin_escape.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\json_binary_test\base64_fast.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\..\src\json_binary_test\bswap32.asm">
+      <Filter>src</Filter>
+    </MASM>
+    <MASM Include="..\..\..\src\json_binary_test\bswap64.asm">
+      <Filter>src</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

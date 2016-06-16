@@ -481,7 +481,7 @@ static std::ptrdiff_t base64_decode_new(const std::string & src, std::string & d
 	}
 
 	std::ptrdiff_t decoded_size = dest - (unsigned char *)&decoded[0];
-	assert(decoded_size <= alloc_size);
+	assert(decoded_size <= (std::ptrdiff_t)alloc_size);
 	decoded.resize(decoded_size);
 	return decoded_size;
 err_exit:
