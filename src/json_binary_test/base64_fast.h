@@ -61,7 +61,6 @@ ssize_t base64_decode_malloc(const char * src, size_t src_len, char ** dest);
 #else
 #if 0
 static INLINE
-//__declspec(naked)
 uint32_t __byteswap32(uint32_t v)
 {
     __asm {
