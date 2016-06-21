@@ -918,21 +918,23 @@ void big_file_test()
             std::ptrdiff_t encoded_size;
 
             size_t dest_len = (content.length() + 2) / 3 * 4 + 1;
-            char * dest = (char *)malloc(dest_len * sizeof(char));
+            std::unique_ptr<char> _dest(new char[dest_len]);
+            char * dest = _dest.get();
 
             sw.reset();
             for (int i = 0; i < kRepeatTimes; ++i) {
                 sw.start();
-				encoded_size = tm_base64_encode_fast(content.c_str(), (int)content.length(), dest, dest_len);
+				encoded_size = base64_encode_fast(content.c_str(), (int)content.length(), dest, dest_len);
                 sw.stop();
                 sw.again();
-                sum_encoded += encoded_size;
+                sum_encoded += encoded_size + 1;
             }
 
             if (encoded_size)
                 dest[encoded_size] = '\0';
-            encoded = dest;
             encoded.resize(encoded_size + 1);
+            encoded = dest;
+            encoded += '\0';
             if (encoded.length() > 0) {
                 std::cout << std::endl;
                 std::cout << "base64_encode_fast(): " << (sum_encoded % 16) << ", encode_size = " << encoded.length();
@@ -949,9 +951,6 @@ void big_file_test()
             std::cout << "avg. time spent: " << std::setprecision(3) << (sw.getTotalMillisec() / (double)kRepeatTimes) << " ms, ";
             std::cout << "throughput: " << std::setprecision(3) << calc_throughput(content.length(), sw.getTotalSecond()) << " MB/s" << std::endl;
             std::cout << std::endl;
-
-            if (dest)
-                free(dest);
         }
 
         {
@@ -961,12 +960,13 @@ void big_file_test()
             std::ptrdiff_t decoded_size;
 
             size_t dest_len = (content.length() + 3) / 4 * 3 + 1;
-            char * dest = (char *)malloc(dest_len * sizeof(char));
+            std::unique_ptr<char> _dest(new char[dest_len]);
+            char * dest = _dest.get();
 
             sw.reset();
             for (int i = 0; i < kRepeatTimes; ++i) {
                 sw.start();
-				decoded_size = tm_base64_decode_fast(content.c_str(), content.length(), dest, dest_len);
+				decoded_size = base64_decode_fast(content.c_str(), content.length(), dest, dest_len);
                 sw.stop();
                 sw.again();
                 sum_decoded += decoded_size;
@@ -980,7 +980,6 @@ void big_file_test()
             for (int i = 0; i < decoded_size; ++i) {
                 *out++ = *in++;
             }
-            decoded.resize(decoded_size);
             if (decoded.length() > 0) {
                 std::cout << "base64_decode_fast(): " << (sum_decoded % 16) << ", decode_size = " << decoded.length() << std::endl;
             }
@@ -998,9 +997,6 @@ void big_file_test()
             else
                 std::cout << "decode() error." << std::endl;
             std::cout << std::endl;
-
-            if (dest)
-                free(dest);
         }
     }
 

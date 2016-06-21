@@ -35,7 +35,7 @@ const unsigned char base64_dec_table[] = {
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
-ssize_t tm_base64_encode(const char * src, size_t src_len, char * dest, size_t dest_len)
+ssize_t __base64_encode(const char * src, size_t src_len, char * dest, size_t dest_len)
 {
     size_t alloc_size = ((src_len + 2) / 3) * 4 + 1;
     if (dest == NULL) {
@@ -129,7 +129,7 @@ ssize_t tm_base64_encode(const char * src, size_t src_len, char * dest, size_t d
     return encoded_size;
 }
 
-ssize_t tm_base64_decode(const char * src, size_t src_len, char * dest, size_t dest_len)
+ssize_t __base64_decode(const char * src, size_t src_len, char * dest, size_t dest_len)
 {
     size_t alloc_size = ((src_len + 3) / 4) * 3;
     if (dest == NULL) {
@@ -269,7 +269,7 @@ err_exit:
     return -1;
 }
 
-ssize_t tm_base64_decode2(const char * src, size_t src_len, char * dest, size_t dest_len)
+ssize_t __base64_decode2(const char * src, size_t src_len, char * dest, size_t dest_len)
 {
     size_t alloc_size = ((src_len + 3) / 4) * 3;
     if (dest == NULL) {
@@ -387,7 +387,7 @@ err_exit:
     return -1;
 }
 
-ssize_t tm_base64_encode_malloc(const char * src, size_t src_len, char ** dest)
+ssize_t base64_encode_malloc(const char * src, size_t src_len, char ** dest)
 {
     size_t alloc_size = ((src_len + 2) / 3) * 4 + 1;
     if (dest == NULL)
@@ -461,7 +461,7 @@ ssize_t tm_base64_encode_malloc(const char * src, size_t src_len, char ** dest)
     return encoded_size;
 }
 
-ssize_t tm_base64_decode_malloc(const char * src, size_t src_len, char ** dest)
+ssize_t base64_decode_malloc(const char * src, size_t src_len, char ** dest)
 {
     size_t alloc_size = ((src_len + 3) / 4) * 3;
     if (dest == NULL)
@@ -569,7 +569,7 @@ err_exit:
     return -1;
 }
 
-ssize_t tm_base64_encode_fast(const char * src, size_t src_len, char * dest, size_t dest_len)
+ssize_t base64_encode_fast(const char * src, size_t src_len, char * dest, size_t dest_len)
 {
     size_t alloc_size = ((src_len + 2) / 3) * 4 + 1;
     if (dest == NULL) {
@@ -679,7 +679,7 @@ ssize_t tm_base64_encode_fast(const char * src, size_t src_len, char * dest, siz
     return encoded_size;
 }
 
-ssize_t tm_base64_decode_fast(const char * src, size_t src_len, char * dest, size_t dest_len)
+ssize_t base64_decode_fast(const char * src, size_t src_len, char * dest, size_t dest_len)
 {
-    return tm_base64_decode(src, src_len, dest, dest_len);
+    return __base64_decode(src, src_len, dest, dest_len);
 }

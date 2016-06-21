@@ -45,7 +45,7 @@ public			__byteswap32_
 
 __byteswap32_   proc    val:dword
 
-OPTION PROLOGUE:NONE, EPILOGUE:NONE
+;OPTION PROLOGUE:NONE, EPILOGUE:NONE
 
 				mov     eax, val
 				bswap   eax
