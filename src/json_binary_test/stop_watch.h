@@ -24,7 +24,7 @@ private:
 	double total_elapsed_time_;
 
 public:
-    StopWatch() : total_elapsed_time_(0.0), interval_time_{0} {};
+    StopWatch() : interval_time_{0}, total_elapsed_time_(0.0) {};
     ~StopWatch() {};
 
 	void reset() {
@@ -32,6 +32,11 @@ public:
         start_time_ = std::chrono::high_resolution_clock::now();
         interval_time_ = std::chrono::duration_cast<time_elapsed>(start_time_ - start_time_);
 	}
+
+    void restart() {
+        reset();
+        start();
+    }
 
     void start() {
         start_time_ = std::chrono::high_resolution_clock::now();
@@ -43,30 +48,56 @@ public:
         stop_time_ = std::chrono::high_resolution_clock::now();
     }
 
+    void mark_start() {
+        start();
+    }
+
+    void mark_stop() {
+        stop();
+    }
+
 	void again() {
-		double elapsed_time = getElapsedTime();
+		double elapsed_time = getIntervalTime();
 		total_elapsed_time_ += elapsed_time;
 	}
-    
-    double getElapsedTime() {
+
+    double now() {
+        time_elapsed now_ = std::chrono::duration_cast< time_elapsed >(std::chrono::high_resolution_clock::now() - start_time_);
+        return now_.count();
+    }
+   
+    double getIntervalTime() {
         interval_time_ = std::chrono::duration_cast< time_elapsed >(stop_time_ - start_time_);
         return interval_time_.count();
     }
 
-    double getMillisec() {
-        return getElapsedTime() * 1000.0;
+    double getSecond() {
+        return getIntervalTime();
     }
 
-    double getSecond() {
+    double getMillisec() {
+        return getIntervalTime() * 1000.0;
+    }
+
+    double getElapsedTime() {
+        stop();
+        return getIntervalTime();
+    }
+
+    double getElapsedSecond() {
         return getElapsedTime();
     }
 
-    double getTotalMillisec() const {
-        return getTotalSecond() * 1000.0;
+    double getElapsedMillisec() {
+        return getElapsedTime() * 1000.0;
     }
 
     double getTotalSecond() const {
         return total_elapsed_time_;
+    }
+
+    double getTotalMillisec() const {
+        return getTotalSecond() * 1000.0;
     }
 };
 
